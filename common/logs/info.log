@@ -1,0 +1,5 @@
+2020-02-09 11:21:06,275 - INFO - Info message.
+2020-02-09 11:21:06,275 - WARNING - Warning message.
+2020-02-09 11:21:06,275 - ERROR - Error message.
+2020-02-09 11:21:06,275 - ERROR - Test exception.
+NoneType: None

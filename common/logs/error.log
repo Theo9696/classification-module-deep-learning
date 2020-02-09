@@ -1,0 +1,3 @@
+2020-02-09 11:21:06,275 - ERROR - logger <module> 56 - Error message.
+2020-02-09 11:21:06,275 - ERROR - logger <module> 57 - Test exception.
+NoneType: None
