@@ -1,8 +1,10 @@
-import torch
-import torch.nn as nn
-from torch.autograd import Variable
-from common.dataImports import dataImporter
+from learning.trainer import TrainingGenerator
+from models.CNN import CNN, CNNetMaterials, MLPnetMaterials
+from common.data_imports import dataImporter
 from common.logger import logger
+
+
+logger.info("Creation of the structure of the models ...")
 
 NUM_CLASSES = 10
 NUM_CONV_1 = 10  # try 32
@@ -10,51 +12,25 @@ NUM_CONV_2 = 20  # try 64
 NUM_FC = 500  # try 1024
 
 
-class TrainingGenerator:
-    def __init__(self, model, data: dataImporter, number_epoch: int = 10, lr: float = -1, momentum: float = -1):
-        self._model = model
-        self._data = data
-        self._number_epoch = number_epoch
-        self._lr = lr if lr > 0 else None
-        self._momentum = momentum if momentum > -1 else None
+# num_conv_in: int, num_conv_out: int, stride: int, kernel_size: int, pooling: list[int] = None,
 
-    def train(model, data: dataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = 0.9):
-        assert data is not None & data.is_data_ready_for_learning(), logger.error("Corrupted learning datas")
+layer_1 = CNNetMaterials(1, NUM_CONV_1, 1, 5, [2,2])
+layer_2 = CNNetMaterials(NUM_CONV_1, NUM_CONV_2, 1, 5, [2,2])
+layer_3 = MLPnetMaterials(NUM_CONV_2*4*4, NUM_FC)
+layer_4 = MLPnetMaterials(NUM_FC, NUM_CLASSES, is_last_layer=True)
 
-        # we use GPU if available, otherwise CPU
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        model.to(device)
+model = CNN([layer_1, layer_2], [layer_3, layer_4], NUM_CLASSES)
 
-        # optimization hyperparameters
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum)
-        loss_fn = nn.CrossEntropyLoss()
+logger.info("Creation of the structure of the models ... completed")
+logger.info("Importation and separation of data ... ")
 
-        # main loop (train+test)
-        for epoch in range(number_epoch):
-            # training
-            model.train()  # mode "train" agit sur "dropout" ou "batchnorm"
-            for batch_idx, (x, target) in enumerate(data.train_loader):
-                optimizer.zero_grad()
-                x, target = Variable(x).to(device), Variable(target).to(device)
-                out = model(x)
-                loss = loss_fn(out, target)
-                loss.backward()  # backtracking automatic
-                optimizer.step()
-                if batch_idx % 100 == 0:
-                    print('epoch {} batch {} [{}/{}] training loss: {}'.format(epoch, batch_idx, batch_idx * len(x),
-                                                                               len(data.train_loader.dataset), loss.item()))
-            #  testing
-            model.eval()
-            correct = 0
-            with torch.no_grad():
-                for batch_idx, (x, target) in enumerate(data.test_loader):
-                    x, target = x.to(device), target.to(device)
-                    out = model(x)
-                    loss = loss_fn(out, target)
-                    # _, prediction = torch.max(out.data, 1)
-                    prediction = out.argmax(dim=1, keepdim=True)  # index of the max log-probability
-                    correct += prediction.eq(target.view_as(prediction)).sum().item()
-            taux_classif = 100. * correct / len(data.test_loader.dataset)
-            print('Accuracy: {}/{} (tx {:.2f}%, err {:.2f}%)\n'.format(correct,
-                                                                       len(data.test_loader.dataset), taux_classif,
-                                                                       100. - taux_classif))
+
+data = dataImporter('./data', './data', 100)
+logger.info("Importation and separation of data completed ")
+
+
+logger.info("Training ....")
+
+gen = TrainingGenerator(model, data)
+gen.train()
+logger.info("Training completed")

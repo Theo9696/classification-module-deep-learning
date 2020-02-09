@@ -30,7 +30,7 @@ class dataImporter:
         plt.pause(0.5)
 
     def is_data_ready_for_learning(self):
-        return self.train_loader is not None & self.test_loader is not None
+        return (self.train_loader is not None) & (self.test_loader is not None)
 
     # def photo:
     #     plt.figure()
