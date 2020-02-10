@@ -1,7 +1,0 @@
-2020-02-09 11:21:06,274 - DEBUG - logger <module> 48 - Logger loaded successfully. Logging directory: /home/theod/Documents/Deep-Learning/project/Deep_Gesture_Detector_LeapMotion/common/logs/
-2020-02-09 11:21:06,274 - DEBUG - logger <module> 53 - Debug message.
-2020-02-09 11:21:06,275 - INFO - logger <module> 54 - Info message.
-2020-02-09 11:21:06,275 - WARNING - logger <module> 55 - Warning message.
-2020-02-09 11:21:06,275 - ERROR - logger <module> 56 - Error message.
-2020-02-09 11:21:06,275 - ERROR - logger <module> 57 - Test exception.
-NoneType: None

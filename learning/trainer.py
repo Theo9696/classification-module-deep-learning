@@ -1,12 +1,12 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from common.data_imports import dataImporter
+from common.data_imports import DataImporter
 from common.logger import logger
 
 
 class TrainingGenerator:
-    def __init__(self, model, data: dataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = -1):
+    def __init__(self, model, data: DataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = -1):
         self._model = model
         self._data = data
         self._number_epoch = number_epoch

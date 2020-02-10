@@ -4,3 +4,5 @@ log/**
 common/__pycache__/*
 logs/**
 data/**
+
+*.log

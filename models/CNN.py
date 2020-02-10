@@ -4,6 +4,8 @@ from common.layers_builders import CNNetMaterials, MLPnetMaterials
 
 SIZE_IMAGE = (256, 256)
 
+FINAL_SIZE = 61
+
 
 class CNN(nn.Module):
     def __init__(self, list_cnn_materials: list, list_mlp_materials: list, num_classes: int):
@@ -24,7 +26,7 @@ class CNN(nn.Module):
         for conv_layer in self.cnn_layers:
             x = conv_layer.apply(x)
 
-        x = x.view(-1, 4 * 4 * self.cnn_layers[-1].get_size_layer_out())  # MLP => prend un vecteur depuis la matrice
+        x = x.view(-1, FINAL_SIZE * FINAL_SIZE * self.cnn_layers[-1].get_size_layer_out())  # MLP => prend un vecteur depuis la matrice
 
         for fc_layer in self.mlp_layers:
             x = fc_layer.apply(x)
