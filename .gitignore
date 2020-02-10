@@ -1,8 +1,9 @@
 .idea/*
-__pycache__/**
-log/**
-common/__pycache__/*
+log/*
+*/__pycache__/**
+
 logs/**
 data/**
 
 *.log
+*cpython-37.pyc

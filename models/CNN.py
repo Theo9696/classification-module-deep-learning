@@ -1,6 +1,5 @@
 import torch.nn as nn
 from common.logger import logger
-from common.layers_builders import CNNetMaterials, MLPnetMaterials
 
 SIZE_IMAGE = (256, 256)
 
@@ -34,9 +33,7 @@ class CNN(nn.Module):
 
     @staticmethod
     def generateModuleList(list_layers: list):
-        modules = []
-        for e in list_layers:
-            modules.append(e.layer)
+        modules = [e.layer for e in list_layers]
         return nn.ModuleList(modules)
 
     @staticmethod

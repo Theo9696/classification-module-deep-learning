@@ -21,7 +21,7 @@ class DataImporter:
         #     transforms.Normalize(mean=mean, std=std)
         # ])
 
-        dataset_full = datasets.ImageFolder(root="data_beer", transform=trans)
+        dataset_full = datasets.ImageFolder(root="leapgestrecog/leapGestRecog/00", transform=trans)
         np.random.seed(42)
         train_data, test_data = train_test_split(dataset_full.samples)
         train_data, val_data = train_test_split(train_data)
@@ -30,17 +30,20 @@ class DataImporter:
         print("Nombre d'images de val : %i" % len(val_data))
         print("Nombre d'images de test : %i" % len(test_data))
 
-        dataset_train = datasets.ImageFolder(root="data_beer", transform=trans)
+        dataset_train = datasets.ImageFolder(root="leapgestrecog/leapGestRecog/00", transform=trans)
         dataset_train.samples = train_data
         dataset_train.imgs = train_data
+        self.dataset_train = dataset_train
 
-        dataset_val = datasets.ImageFolder(root="data_beer", transform=trans)
+        dataset_val = datasets.ImageFolder(root="leapgestrecog/leapGestRecog/00", transform=trans)
         dataset_val.samples = val_data
         dataset_val.imgs = val_data
+        self.dataset_val = dataset_val
 
-        dataset_test = datasets.ImageFolder(root="data_beer", transform=trans)
+        dataset_test = datasets.ImageFolder(root="leapgestrecog/leapGestRecog/00", transform=trans)
         dataset_test.samples = test_data
         dataset_test.imgs = test_data
+        self.dataset_test = dataset_test
 
         # on définit les datasets et loaders pytorch à partir des listes d'images de train / val / test
         # dataset_train = datasets.ImageFolder(image_directory, data_transforms)
@@ -53,7 +56,7 @@ class DataImporter:
             batch_size=batch_size,
             shuffle=True)
         self.test_loader = torch.utils.data.DataLoader(
-            dataset=dataset_test,
+            dataset=self.dataset_test,
             batch_size=batch_size,
             shuffle=False)
 
@@ -72,6 +75,7 @@ class DataImporter:
 
     def is_data_ready_for_learning(self):
         return (self.train_loader is not None) & (self.test_loader is not None)
+
 
     # def photo:
     #     plt.figure()

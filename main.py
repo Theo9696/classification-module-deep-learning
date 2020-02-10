@@ -1,5 +1,6 @@
 from learning.trainer import TrainingGenerator
-from models.CNN import CNN, CNNetMaterials, MLPnetMaterials
+from models.CNN import CNN
+from common.layers_builders import CNNetMaterials, MLPnetMaterials
 from common.data_imports import DataImporter
 from common.logger import logger
 
@@ -11,6 +12,7 @@ NUM_CONV_2 = 20  # try 64
 NUM_FC = 500  # try 1024
 
 FINAL_SIZE = 61
+
 
 # num_conv_in: int, num_conv_out: int, stride: int, kernel_size: int, pooling: list[int] = None,
 
@@ -24,11 +26,11 @@ model = CNN([layer_1, layer_2], [layer_3, layer_4], NUM_CLASSES)
 logger.info("Creation of the structure of the models ... completed")
 logger.info("Importation and separation of data ... ")
 
-data = DataImporter('./data', './data', batch_size=100)
+data = DataImporter('./data', './data', batch_size=60)
 logger.info("Importation and separation of data completed ")
 
 logger.info("Training ....")
 
-gen = TrainingGenerator(model, data)
+gen = TrainingGenerator(model, data, number_epoch=5,print_val=False)
 gen.train()
-logger.info("Training completed")
+gen.test()

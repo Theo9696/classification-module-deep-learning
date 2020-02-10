@@ -1,3 +1,5 @@
+import time
+
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -6,15 +8,38 @@ from common.logger import logger
 
 
 class TrainingGenerator:
-    def __init__(self, model, data: DataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = -1):
+    def __init__(self, model, data: DataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = -1,
+                 print_val=True):
         self._model = model
         self._data = data
         self._number_epoch = number_epoch
         self._lr = lr if lr > 0 else 0.05
         self._momentum = momentum if momentum > -1 else None
+        self.criterion = nn.CrossEntropyLoss()
+        self.print_val = print_val
+
+    def evaluate(self, model, dataset, device):
+        avg_loss = 0.
+        avg_accuracy = 0
+        loader = torch.utils.data.DataLoader(dataset, batch_size=8, shuffle=False, num_workers=2)
+        for data in loader:
+            inputs, labels = data
+            inputs, labels = inputs.to(device), labels.to(device)
+            outputs = model(inputs)
+
+            loss = self.criterion(outputs, labels)
+            _, preds = torch.max(outputs, 1)
+            n_correct = torch.sum(preds == labels)
+
+            avg_loss += loss.item()
+            avg_accuracy += n_correct
+
+        return avg_loss / len(dataset), float(avg_accuracy) / len(dataset)
 
     def train(self):
-        assert (self._data is not None) & (self._data.is_data_ready_for_learning()), logger.error("Corrupted learning datas")
+        ts = time.time()
+        assert (self._data is not None) & (self._data.is_data_ready_for_learning()), logger.error(
+            "Corrupted learning datas")
 
         # we use GPU if available, otherwise CPU
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -28,6 +53,7 @@ class TrainingGenerator:
             optimizer = torch.optim.SGD(model.parameters(), lr=self._lr)
         loss_fn = nn.CrossEntropyLoss()
 
+        self._model.train(True)
         # main loop (train+test)
         for epoch in range(self._number_epoch):
             # training
@@ -37,23 +63,24 @@ class TrainingGenerator:
                 x, target = Variable(x).to(device), Variable(target).to(device)
                 out = self._model(x)
                 loss = loss_fn(out, target)
+
+                if self.print_val & (batch_idx % 5 == 0):
+                    self._model.train(False)
+                    loss_val, accuracy = self.evaluate(self._model, self._data.dataset_val, device)
+                    self._model.train(True)
+                    print(
+                        "EPOCH {} | batch: {} loss train: {:1.4f}\t val {:1.4f}\tAcc: {:.1%}".format(epoch, batch_idx,
+                                                                                                     loss.item(),
+                                                                                                     loss_val,
+                                                                                                     accuracy))
                 loss.backward()  # backtracking automatic
                 optimizer.step()
-                if batch_idx % 100 == 0:
-                    print('epoch {} batch {} [{}/{}] training loss: {}'.format(epoch, batch_idx, batch_idx * len(x),
-                                                                               len(self._data.train_loader.dataset), loss.item()))
-            #  testing
-            self._model.eval()
-            correct = 0
-            with torch.no_grad():
-                for batch_idx, (x, target) in enumerate(self._data.test_loader):
-                    x, target = x.to(device), target.to(device)
-                    out = self._model(x)
-                    loss = loss_fn(out, target)
-                    # _, prediction = torch.max(out.data, 1)
-                    prediction = out.argmax(dim=1, keepdim=True)  # index of the max log-probability
-                    correct += prediction.eq(target.view_as(prediction)).sum().item()
-            taux_classif = 100. * correct / len(self._data.test_loader.dataset)
-            print('Accuracy: {}/{} (tx {:.2f}%, err {:.2f}%)\n'.format(correct,
-                                                                       len(self._data.test_loader.dataset), taux_classif,
-                                                                       100. - taux_classif))
+        logger.info(f"Training completed in {time.time() - ts} s")
+
+    def test(self):
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+        self._model.train(False)
+        loss_val, accuracy = self.evaluate(self._model, self._data.dataset_test, device)
+        print(
+            "TEST | loss val {:1.4f}\tAcc: {:.1%}".format(loss_val, accuracy))
