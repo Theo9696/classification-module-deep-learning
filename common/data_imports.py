@@ -8,42 +8,24 @@ import numpy as np
 
 
 class DataImporter:
-    def __init__(self, train_path: str, test_path: str, batch_size: int = 100):
+    def __init__(self, main_folder: str, batch_size: int = 100, split=True):
         trans = transforms.Compose([transforms.Resize([256, 256]),
                                     transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
-        # train_data = datasets.MNIST(train_path, train=True, transform=trans, download=True)
-        # test_data = datasets.MNIST(test_path, train=False, transform=trans, download=True)
-
-        # on définit les transformations à appliquer aux images du dataset
-        # data_transforms = transforms.Compose([
-        #     transforms.Resize([224, 224]),
-        #     transforms.ToTensor(),
-        #     transforms.Normalize(mean=mean, std=std)
-        # ])
-
-        dataset_full = datasets.ImageFolder(root="leapgestrecog/leapGestRecog/00", transform=trans)
         np.random.seed(42)
-        train_data, test_data = train_test_split(dataset_full.samples)
-        train_data, val_data = train_test_split(train_data)
 
-        print("Nombre d'images de train : %i" % len(train_data))
-        print("Nombre d'images de val : %i" % len(val_data))
-        print("Nombre d'images de test : %i" % len(test_data))
+        if split:
+            train_data, val_data, test_data = self.split_data(main_folder, trans)
+            self.dataset_train = self.format_dataset(main_folder, trans, train_data)
+            self.dataset_val = self.format_dataset(main_folder, trans, val_data)
+            self.dataset_test = self.format_dataset(main_folder, trans, test_data)
+        else:
+            self.dataset_train = datasets.ImageFolder(root=main_folder + "/train", transform=trans)
+            self.dataset_val = datasets.ImageFolder(root=main_folder + "/val", transform=trans)
+            self.dataset_test = datasets.ImageFolder(root=main_folder + "/test", transform=trans)
 
-        dataset_train = datasets.ImageFolder(root="leapgestrecog/leapGestRecog/00", transform=trans)
-        dataset_train.samples = train_data
-        dataset_train.imgs = train_data
-        self.dataset_train = dataset_train
-
-        dataset_val = datasets.ImageFolder(root="leapgestrecog/leapGestRecog/00", transform=trans)
-        dataset_val.samples = val_data
-        dataset_val.imgs = val_data
-        self.dataset_val = dataset_val
-
-        dataset_test = datasets.ImageFolder(root="leapgestrecog/leapGestRecog/00", transform=trans)
-        dataset_test.samples = test_data
-        dataset_test.imgs = test_data
-        self.dataset_test = dataset_test
+        print("Nombre d'images de train : %i" % len(self.dataset_train))
+        print("Nombre d'images de val : %i" % len(self.dataset_val))
+        print("Nombre d'images de test : %i" % len(self.dataset_test))
 
         # on définit les datasets et loaders pytorch à partir des listes d'images de train / val / test
         # dataset_train = datasets.ImageFolder(image_directory, data_transforms)
@@ -52,7 +34,7 @@ class DataImporter:
         # loader_train = torch.utils.data.DataLoader(dataset_train, batch_size=16, shuffle=True, num_workers=4)
 
         self.train_loader = torch.utils.data.DataLoader(
-            dataset=dataset_train,
+            dataset=self.dataset_train,
             batch_size=batch_size,
             shuffle=True)
         self.test_loader = torch.utils.data.DataLoader(
@@ -65,6 +47,20 @@ class DataImporter:
         logger.info(f'total training batch number: {len(self.train_loader)}')
         logger.info(f'total testing batch number: {len(self.test_loader)}')
 
+    @staticmethod
+    def format_dataset(folder, trans, data):
+        dataset = datasets.ImageFolder(root=folder, transform=trans)
+        dataset.samples = data
+        dataset.imgs = data
+        return dataset
+
+    @staticmethod
+    def split_data(main_folder, trans):
+        dataset_full = datasets.ImageFolder(root=main_folder, transform=trans)
+        train_data, test_data = train_test_split(dataset_full.samples)
+        train_data, val_data = train_test_split(train_data)
+        return train_data, val_data, test_data
+
     def imshow(self, tensor, title=None):
         img = tensor.cpu().clone()
         img = img.squeeze()
@@ -75,7 +71,6 @@ class DataImporter:
 
     def is_data_ready_for_learning(self):
         return (self.train_loader is not None) & (self.test_loader is not None)
-
 
     # def photo:
     #     plt.figure()

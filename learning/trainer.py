@@ -8,7 +8,7 @@ from common.logger import logger
 
 
 class TrainingGenerator:
-    def __init__(self, model, data: DataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = -1,
+    def __init__(self, model: str, data: DataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = -1,
                  print_val=True):
         self._model = model
         self._data = data
@@ -47,17 +47,16 @@ class TrainingGenerator:
 
         # optimization hyperparameters
         if self._momentum:
-            optimizer = torch.optim.SGD(self._model.parameters(), lr=self._lr, momentum=self._momentum)
+            optimizer = torch.optim.SGD(self._model.parameters, lr=self._lr, momentum=self._momentum)
         else:
             model = self._model
-            optimizer = torch.optim.SGD(model.parameters(), lr=self._lr)
+            optimizer = torch.optim.SGD(self._model.parameters(), lr=self._lr)
         loss_fn = nn.CrossEntropyLoss()
 
-        self._model.train(True)
         # main loop (train+test)
         for epoch in range(self._number_epoch):
             # training
-            self._model.train()  # mode "train" agit sur "dropout" ou "batchnorm"
+            self._model.train(True)  # mode "train" agit sur "dropout" ou "batchnorm"
             for batch_idx, (x, target) in enumerate(self._data.train_loader):
                 optimizer.zero_grad()
                 x, target = Variable(x).to(device), Variable(target).to(device)
