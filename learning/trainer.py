@@ -8,7 +8,7 @@ from common.logger import logger
 
 
 class TrainingGenerator:
-    def __init__(self, model: str, data: DataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = -1,
+    def __init__(self, model, data: DataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = -1,
                  print_val=True):
         self._model = model
         self._data = data
@@ -64,22 +64,27 @@ class TrainingGenerator:
                 loss = loss_fn(out, target)
 
                 if self.print_val & (batch_idx % 5 == 0):
-                    self._model.train(False)
-                    loss_val, accuracy = self.evaluate(self._model, self._data.dataset_val, device)
-                    self._model.train(True)
-                    print(
-                        "EPOCH {} | batch: {} loss train: {:1.4f}\t val {:1.4f}\tAcc: {:.1%}".format(epoch, batch_idx,
-                                                                                                     loss.item(),
-                                                                                                     loss_val,
-                                                                                                     accuracy))
+                    self.show_score(epoch=epoch, batch_idx=batch_idx, item=loss.item(), device=device)
                 loss.backward()  # backtracking automatic
                 optimizer.step()
+
+            self.show_score(epoch=epoch, item=loss.item(), device=device)
         logger.info(f"Training completed in {time.time() - ts} s")
+
+    def show_score(self, epoch: int, item, device, batch_idx: int = None):
+        self._model.train(False)
+        loss_val, accuracy = self.evaluate(self._model, self._data.dataset_val, device)
+        self._model.train(True)
+        message = f"loss train: {round(item, 3)} val: {round(loss_val,3)} Acc: {accuracy*100}%"
+        if batch_idx is not None:
+            message = f"EPOCH {epoch} | batch: {batch_idx} " + message
+        else:
+            message = f"EPOCH {epoch} | " + message
+        logger.info(message)
 
     def test(self):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         self._model.train(False)
         loss_val, accuracy = self.evaluate(self._model, self._data.dataset_test, device)
-        print(
-            "TEST | loss val {:1.4f}\tAcc: {:.1%}".format(loss_val, accuracy))
+        logger.info(f"TEST | loss val: {loss_val} Acc: {accuracy}%")

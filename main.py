@@ -4,7 +4,6 @@ from models.Resnet import Resnet
 from common.layers_builders import CNNetMaterials, MLPnetMaterials
 from common.data_imports import DataImporter
 from common.logger import logger
-from torchvision import models
 
 logger.info("Creation of the structure of the models ...")
 
@@ -32,10 +31,10 @@ logger.info("Importation and separation of data ... ")
 xray = "chest-xray-pneumonia/chest_xray/chest_xray"
 hand = "leap"
 data = DataImporter(batch_size=20, main_folder=xray, split=False)
-logger.info("Importation and separation of data completed ")
+logger.info("Importation and separation of data ... completed ")
 
 logger.info("Training ....")
 
-gen = TrainingGenerator(model=resnet, data=data, number_epoch=1, print_val=True)
+gen = TrainingGenerator(model=cnn, data=data, number_epoch=2, print_val=True)
 gen.train()
 gen.test()
