@@ -5,13 +5,14 @@ import torch.nn as nn
 from torch.autograd import Variable
 from common.data_imports import DataImporter
 from common.logger import logger
-from saver.excel_actions import SheetSaver, SheetNames, ParametersNames
+from data_saver.excel_actions import SheetSaver, SheetNames, ParametersNames
+from models.Model import Model
 
 
 class TrainingGenerator:
-    def __init__(self, model, data: DataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = -1,
+    def __init__(self, model: Model, data: DataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = -1,
                  print_val=True, save_val=True, sheet_name: str = "", location_to_save: str = ""):
-        self._model = model
+        self._model = model.model
         self._data = data
         self._number_epoch = number_epoch
         self._lr = lr if lr > 0 else 0.05
@@ -24,6 +25,7 @@ class TrainingGenerator:
                                                            ParametersNames.NB_EPOCH.value: self._number_epoch,
                                                            ParametersNames.LEARNING_RATE.value: self._lr,
                                                            ParametersNames.MOMENTUM.value: self._momentum},
+                             SheetNames.PARAMETERS_MODELS.value: model.get_parameters(),
                              SheetNames.TRAIN_ERROR.value: [],
                              SheetNames.LOSS_FUNCTION.value: [],
                              SheetNames.VAL_ERROR.value: [],
@@ -81,8 +83,9 @@ class TrainingGenerator:
                 optimizer.step()
 
             self.show_score(epoch=epoch, item=loss.item(), device=device)
-
-        logger.info(f"Training completed in {time.time() - ts} s")
+        time_to_fit = time.time() - ts
+        self.dict_to_save[SheetNames.PARAMETERS_MODELS.value][ParametersNames.TIME.value] = time_to_fit
+        logger.info(f"Training completed in {time_to_fit} s")
 
     def show_score(self, epoch: int, item, device, batch_idx: int = None):
         self._model.train(False)

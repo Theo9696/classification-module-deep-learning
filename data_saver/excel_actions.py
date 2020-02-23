@@ -5,6 +5,7 @@ from enum import Enum
 
 class SheetNames(Enum):
     PARAMETERS = "parameters"
+    PARAMETERS_MODELS = "model parameters"
     LOSS_FUNCTION = "loss function value"
     TRAIN_ERROR = "train error"
     VAL_ERROR = "val error"
@@ -17,6 +18,7 @@ class ParametersNames(Enum):
     LEARNING_RATE = "learning rate"
     DROPOUT = "dropout"
     NB_EPOCH = "nb epoch"
+    TIME = "time"
 
 
 class SheetSaver:
@@ -63,33 +65,34 @@ class SheetSaver:
         return True
 
     @staticmethod
-    def format_parameters(parameters: dict):
-        list_to_save = []
+    def format_parameters(parameters: dict, index_lign: int, list_to_save: list):
         if (parameters is not None) & (type(parameters) is dict):
             index = 0
             for param in parameters:
-                list_to_save.append([0, index + 1, param])
-                list_to_save.append([1, index + 1, parameters[param]])
+                list_to_save.append([index_lign, index + 1, param])
+                list_to_save.append([index_lign + 1, index + 1, parameters[param]])
                 index += 1
-
-        # The lign of index 3 will be filled with Epoch 0 Epoch 1 Epoch 2 ...
-        index_name = 3
-        nb_epoch = parameters[str(ParametersNames.NB_EPOCH.value)]
-        print(nb_epoch)
-        if nb_epoch is not None:
-            for k in range(nb_epoch):
-                list_to_save.append([index_name, 2 + k, f"epoch {k}"])
 
         return list_to_save
 
     @staticmethod
+    def initialize_title_epoch(nb_epoch: int, list_to_save: list):
+        # The lign of index 3 will be filled with Epoch 0 Epoch 1 Epoch 2 ...
+        index_name = 6
+        if nb_epoch is not None:
+            for k in range(nb_epoch):
+                list_to_save.append([index_name, 2 + k, f"epoch {k}"])
+
+    @staticmethod
     def format_dic(dic: dict):
         parameters = dic[SheetNames.PARAMETERS.value]
-        list_to_save = SheetSaver.format_parameters(parameters)
+        list_to_save = SheetSaver.format_parameters(parameters, 0, [])
+        SheetSaver.format_parameters(dic[SheetNames.PARAMETERS_MODELS.value], 2, list_to_save)
+        SheetSaver.initialize_title_epoch(parameters[ParametersNames.NB_EPOCH.value], list_to_save)
 
-        index_name = 3
+        index_name = 6
         for name_element in dic:
-            if name_element is not SheetNames.PARAMETERS.value:
+            if name_element not in [SheetNames.PARAMETERS_MODELS.value, SheetNames.PARAMETERS.value]:
                 index_name += 1
                 list_to_save.append([index_name, 1, name_element])
                 for element in dic[name_element]:
@@ -101,9 +104,10 @@ class SheetSaver:
 if __name__ == "__main__":
     dic = {SheetNames.PARAMETERS.value: {ParametersNames.LEARNING_RATE.value: 5, ParametersNames.MOMENTUM.value: 2,
                                          ParametersNames.NB_EPOCH.value: 3},
+           SheetNames.PARAMETERS_MODELS.value: {"nb layers": 3, "kernel": 4},
            SheetNames.TRAIN_ERROR.value: [(1, 0.3), (2, 0.35), (3, 0.41)],
            SheetNames.LOSS_FUNCTION.value: [(1, 5), (2, 2), (3, 0.27)],
            SheetNames.TEST_ERROR.value: [(3, 0.41)]}
     saver = SheetSaver("../resources/data.xlsx")
-    print(saver.write_dic(dic=dic, sheet_name="essai_11"))
+    print(saver.write_dic(dic=dic, sheet_name="essai_model 2"))
     saver.close_file()
