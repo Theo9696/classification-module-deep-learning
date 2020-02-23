@@ -5,11 +5,12 @@ import torch.nn as nn
 from torch.autograd import Variable
 from common.data_imports import DataImporter
 from common.logger import logger
+from saver.excel_actions import SheetSaver, SheetNames, ParametersNames
 
 
 class TrainingGenerator:
     def __init__(self, model, data: DataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = -1,
-                 print_val=True):
+                 print_val=True, save_val=True, sheet_name: str = "", location_to_save: str = ""):
         self._model = model
         self._data = data
         self._number_epoch = number_epoch
@@ -17,6 +18,17 @@ class TrainingGenerator:
         self._momentum = momentum if momentum > -1 else None
         self.criterion = nn.CrossEntropyLoss()
         self.print_val = print_val
+        self.save_val = save_val
+        self.sheet_saver = SheetSaver(location_to_save)
+        self.dict_to_save = {SheetNames.PARAMETERS.value: {ParametersNames.MODEL.value: type(self._model).__name__,
+                                                           ParametersNames.NB_EPOCH.value: self._number_epoch,
+                                                           ParametersNames.LEARNING_RATE.value: self._lr,
+                                                           ParametersNames.MOMENTUM.value: self._momentum},
+                             SheetNames.TRAIN_ERROR.value: [],
+                             SheetNames.LOSS_FUNCTION.value: [],
+                             SheetNames.VAL_ERROR.value: [],
+                             SheetNames.TEST_ERROR.value: []}
+        self.sheet_name = sheet_name
 
     def evaluate(self, model, dataset, device):
         avg_loss = 0.
@@ -69,18 +81,24 @@ class TrainingGenerator:
                 optimizer.step()
 
             self.show_score(epoch=epoch, item=loss.item(), device=device)
+
         logger.info(f"Training completed in {time.time() - ts} s")
 
     def show_score(self, epoch: int, item, device, batch_idx: int = None):
         self._model.train(False)
         loss_val, accuracy = self.evaluate(self._model, self._data.dataset_val, device)
         self._model.train(True)
-        message = f"loss train: {round(item, 3)} val: {round(loss_val,3)} Acc: {accuracy*100}%"
+        message = f"loss train: {round(item, 3)} val: {round(loss_val, 3)} Acc: {accuracy * 100}%"
         if batch_idx is not None:
             message = f"EPOCH {epoch} | batch: {batch_idx} " + message
         else:
             message = f"EPOCH {epoch} | " + message
         logger.info(message)
+
+        if self.save_val & (batch_idx is None):
+            self.dict_to_save[SheetNames.TRAIN_ERROR.value].append((epoch + 1, item))
+            self.dict_to_save[SheetNames.LOSS_FUNCTION.value].append((epoch + 1, loss_val))
+            self.dict_to_save[SheetNames.VAL_ERROR.value].append((epoch + 1, accuracy))
 
     def test(self):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -88,3 +106,8 @@ class TrainingGenerator:
         self._model.train(False)
         loss_val, accuracy = self.evaluate(self._model, self._data.dataset_test, device)
         logger.info(f"TEST | loss val: {loss_val} Acc: {accuracy}%")
+
+        if self.save_val:
+            self.dict_to_save[SheetNames.TEST_ERROR.value].append((self._number_epoch, accuracy))
+
+            self.sheet_saver.write_dic(dic=self.dict_to_save, sheet_name=self.sheet_name)
