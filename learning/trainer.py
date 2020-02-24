@@ -11,15 +11,16 @@ from models.Model import Model
 
 class TrainingGenerator:
     def __init__(self, model: Model, data: DataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = -1,
-                 print_val=True, save_val=True, sheet_name: str = "", location_to_save: str = ""):
+                 print_intermediate_perf=True, save_performances=True, sheet_name: str = "", location_to_save: str = "",
+                 parameters_data_input: dict = None):
         self._model = model.model
         self._data = data
         self._number_epoch = number_epoch
         self._lr = lr if lr > 0 else 0.05
         self._momentum = momentum if momentum > -1 else None
         self.criterion = nn.CrossEntropyLoss()
-        self.print_val = print_val
-        self.save_val = save_val
+        self.print_val = print_intermediate_perf
+        self.save_val = save_performances
         self.sheet_saver = SheetSaver(location_to_save)
         self.dict_to_save = {SheetNames.PARAMETERS.value: {ParametersNames.MODEL.value: type(self._model).__name__,
                                                            ParametersNames.NB_EPOCH.value: self._number_epoch,
@@ -31,6 +32,8 @@ class TrainingGenerator:
                              SheetNames.VAL_ERROR.value: [],
                              SheetNames.TEST_ERROR.value: []}
         self.sheet_name = sheet_name
+        for element in parameters_data_input:
+            self.dict_to_save[SheetNames.PARAMETERS_MODELS.value][element] = parameters_data_input[element]
 
     def evaluate(self, model, dataset, device):
         avg_loss = 0.

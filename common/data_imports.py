@@ -5,27 +5,40 @@ from sklearn.model_selection import train_test_split
 from torchvision import datasets, transforms
 from common.logger import logger
 import numpy as np
+from enum import Enum
+from data_saver.excel_actions import ParametersNames
+
+
+class SplitOptions(Enum):
+    SPLIT_ALL = 0
+    SPLIT_TRAIN = 1
+    NO_SPLIT = 2
 
 
 class DataImporter:
-    def __init__(self, main_folder: str, batch_size: int = 100, split=True):
-        trans = transforms.Compose([transforms.Resize([256, 256]),
-                                    transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
+    def __init__(self, main_folder: str, batch_size: int = 100, split: SplitOptions = SplitOptions.SPLIT_ALL,
+                 train_size: float = 0.8, size_image_input_model: int = 256):
+
         np.random.seed(42)
+        self.train_size = train_size
+        self.dataset_train, self.dataset_val, self.dataset_test = self.build_dataset(split=split,
+                                                                                     main_folder=main_folder,
+                                                                                     train_size= train_size,
+                                                                                     size_image_input_model=size_image_input_model)
+        self.nb_train_samples = len(self.dataset_train)
+        self.nb_val_samples = len(self.dataset_val)
+        self.nb_test_samples = len(self.dataset_test)
 
-        if split:
-            train_data, val_data, test_data = self.split_data(main_folder, trans)
-            self.dataset_train = self.format_dataset(main_folder, trans, train_data)
-            self.dataset_val = self.format_dataset(main_folder, trans, val_data)
-            self.dataset_test = self.format_dataset(main_folder, trans, test_data)
-        else:
-            self.dataset_train = datasets.ImageFolder(root=main_folder + "/train", transform=trans)
-            self.dataset_val = datasets.ImageFolder(root=main_folder + "/val", transform=trans)
-            self.dataset_test = datasets.ImageFolder(root=main_folder + "/test", transform=trans)
+        self.parameters_data_input = {
+            ParametersNames.NB_TRAIN.value: self.nb_train_samples,
+            ParametersNames.NB_VAL.value: self.nb_val_samples,
+            ParametersNames.NB_TEST.value: self.nb_test_samples,
+            ParametersNames.SIZE_IMAGE_INPUT_MODEL.value: size_image_input_model
+        }
 
-        print("Nombre d'images de train : %i" % len(self.dataset_train))
-        print("Nombre d'images de val : %i" % len(self.dataset_val))
-        print("Nombre d'images de test : %i" % len(self.dataset_test))
+        logger.info(f"Number of train images: {self.nb_train_samples}")
+        logger.info(f"Number of validation images: {self.nb_val_samples}")
+        logger.info(f"Number of test images: {self.nb_test_samples}")
 
         # on définit les datasets et loaders pytorch à partir des listes d'images de train / val / test
         # dataset_train = datasets.ImageFolder(image_directory, data_transforms)
@@ -42,10 +55,33 @@ class DataImporter:
             batch_size=batch_size,
             shuffle=False)
 
-        # TODO: add eval
-
         logger.info(f'total training batch number: {len(self.train_loader)}')
         logger.info(f'total testing batch number: {len(self.test_loader)}')
+
+    @staticmethod
+    def build_dataset(split: SplitOptions, main_folder: str, train_size: float, size_image_input_model: int):
+        trans = transforms.Compose([transforms.Resize([size_image_input_model, size_image_input_model]),
+                                    transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
+
+        if split.value is SplitOptions.SPLIT_ALL.value:
+            train_data, val_data, test_data = DataImporter.split_data_all(main_folder, trans)
+            dataset_train = DataImporter.format_dataset(main_folder, trans, train_data)
+            dataset_val = DataImporter.format_dataset(main_folder, trans, val_data)
+            dataset_test = DataImporter.format_dataset(main_folder, trans, test_data)
+
+        elif split.value is SplitOptions.SPLIT_TRAIN.value:
+            dataset_test = datasets.ImageFolder(root=main_folder + "/test", transform=trans)
+            train_data, val_data = DataImporter.split_data_train(main_folder=main_folder + "/train", trans=trans,
+                                                                 train_size=train_size)
+            dataset_train = DataImporter.format_dataset(main_folder, trans, train_data)
+            dataset_val = DataImporter.format_dataset(main_folder, trans, val_data)
+
+        else:
+            dataset_train = datasets.ImageFolder(root=main_folder + "/train", transform=trans)
+            dataset_val = datasets.ImageFolder(root=main_folder + "/val", transform=trans)
+            dataset_test = datasets.ImageFolder(root=main_folder + "/test", transform=trans)
+
+        return dataset_train, dataset_val, dataset_test
 
     @staticmethod
     def format_dataset(folder, trans, data):
@@ -55,11 +91,17 @@ class DataImporter:
         return dataset
 
     @staticmethod
-    def split_data(main_folder, trans):
+    def split_data_all(main_folder, trans):
         dataset_full = datasets.ImageFolder(root=main_folder, transform=trans)
         train_data, test_data = train_test_split(dataset_full.samples)
         train_data, val_data = train_test_split(train_data)
         return train_data, val_data, test_data
+
+    @staticmethod
+    def split_data_train(main_folder, trans, train_size: float):
+        dataset_full = datasets.ImageFolder(root=main_folder, transform=trans)
+        train_data, val_data = train_test_split(dataset_full.samples, train_size=train_size)
+        return train_data, val_data
 
     def imshow(self, tensor, title=None):
         img = tensor.cpu().clone()

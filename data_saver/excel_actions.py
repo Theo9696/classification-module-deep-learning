@@ -19,6 +19,10 @@ class ParametersNames(Enum):
     DROPOUT = "dropout"
     NB_EPOCH = "nb epoch"
     TIME = "time"
+    NB_TRAIN = "nb samples train"
+    NB_VAL = "nb samples val"
+    NB_TEST = "nb samples test"
+    SIZE_IMAGE_INPUT_MODEL = "resized size of images"
 
 
 class SheetSaver:
