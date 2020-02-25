@@ -8,7 +8,7 @@ from data_saver.excel_actions import SheetSaver
 
 
 class DataLocation(Enum):
-    XRAY = "chest-xray-pneumonia/chest_xray/chest_xray"
+    X_RAY = "chest-xray-pneumonia/chest_xray/chest_xray"
     HAND = "leap"
 
 

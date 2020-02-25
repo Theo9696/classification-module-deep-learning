@@ -23,7 +23,7 @@ class DataImporter:
         self.train_size = train_size
         self.dataset_train, self.dataset_val, self.dataset_test = self.build_dataset(split=split,
                                                                                      main_folder=main_folder,
-                                                                                     train_size= train_size,
+                                                                                     train_size=train_size,
                                                                                      size_image_input_model=size_image_input_model)
         self.nb_train_samples = len(self.dataset_train)
         self.nb_val_samples = len(self.dataset_val)

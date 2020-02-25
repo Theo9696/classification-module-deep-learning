@@ -85,12 +85,11 @@ class CNN(nn.Module):
 
 class ModelCNN(Model):
     def __init__(self, nb_classes: int, depth_input: int = 1):
-        super().__init__()
+        super().__init__(nb_classes_out=nb_classes)
         self.nb_layers = 0
         self.pooling = 0
         self.stride = 0
         self.kernel = 0
-        self.nb_classes = nb_classes
         self.depth_input = depth_input
 
     def get_parameters(self):
@@ -119,8 +118,8 @@ class ModelCnn2Layers(ModelCNN):
         layer_2 = CNNetMaterials(self.num_conv_1, self.num_conv_2, self.stride, self.kernel,
                                  [self.pooling, self.pooling])
         layer_3 = MLPnetMaterials(self.num_conv_2 * self.final_size * self.final_size, self.num_fc)
-        layer_4 = MLPnetMaterials(self.num_fc, self.nb_classes, is_last_layer=True)
-        self.model = CNN([layer_1, layer_2], [layer_3, layer_4], self.nb_classes, self.final_size)
+        layer_4 = MLPnetMaterials(self.num_fc, self.nb_classes_out, is_last_layer=True)
+        self.model = CNN([layer_1, layer_2], [layer_3, layer_4], self.nb_classes_out, self.final_size)
 
 
 class ModelCnn3Layers(ModelCNN):
@@ -143,9 +142,9 @@ class ModelCnn3Layers(ModelCNN):
         layer_2 = CNNetMaterials(num_conv_1, num_conv_2, self.stride, self.kernel[1], [self.pooling, self.pooling])
         layer_3 = CNNetMaterials(num_conv_2, num_conv_3, self.stride, self.kernel[2], [self.pooling, self.pooling])
         layer_4 = MLPnetMaterials(num_conv_3 * final_size * final_size, num_fc)
-        layer_5 = MLPnetMaterials(num_fc, self.nb_classes, is_last_layer=True)
+        layer_5 = MLPnetMaterials(num_fc, self.nb_classes_out, is_last_layer=True)
 
-        self.model = CNN([layer_1, layer_2, layer_3], [layer_4, layer_5], self.nb_classes, final_size)
+        self.model = CNN([layer_1, layer_2, layer_3], [layer_4, layer_5], self.nb_classes_out, final_size)
 
 
 class ModelCnn4Layers(ModelCNN):

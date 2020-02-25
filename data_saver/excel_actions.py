@@ -6,10 +6,8 @@ from enum import Enum
 class SheetNames(Enum):
     PARAMETERS = "parameters"
     PARAMETERS_MODELS = "model parameters"
-    LOSS_FUNCTION = "loss function value"
-    TRAIN_ERROR = "train error"
-    VAL_ERROR = "val error"
-    TEST_ERROR = "test error"
+    TRAINING = "training"
+    RESULT = "Result"
 
 
 class ParametersNames(Enum):
@@ -23,6 +21,30 @@ class ParametersNames(Enum):
     NB_VAL = "nb samples val"
     NB_TEST = "nb samples test"
     SIZE_IMAGE_INPUT_MODEL = "resized size of images"
+
+
+class Result(Enum):
+    TP = "True Positive"
+    TN = "True Negative"
+    FP = "False Positive"
+    FN = "False Negative"
+    LOSS = "Average loss"
+    ACCURACY = "Accuracy"
+    PRECISION = "Precision"
+    RECALL = "Recall"
+
+
+class TrainingResult(Enum):
+    TP = "True Positive Val"
+    TN = "True Negative Val"
+    FP = "False Positive Val"
+    FN = "False Negative Val"
+    CONFUSION_MATRIX = "Confusion matrix"
+    LOSS_TRAIN = "Average loss Train"
+    LOSS_VAL = "Average loss Val"
+    ACCURACY = "Accuracy Val"
+    PRECISION = "Precision Val"
+    RECALL = "Recall Val"
 
 
 class SheetSaver:
@@ -51,9 +73,9 @@ class SheetSaver:
                 w_sheet.write(element[0], element[1], element[2])
             w_write.save(self.location)
 
-    def write_dic(self, dic: dict, sheet_name: str):
-        print(dic)
-        self.write_list(self.format_dic(dic), sheet_name)
+    def write_dic(self, dictionary: dict, sheet_name: str):
+        # print(dictionary)
+        self.write_list(self.format_dic(dictionary), sheet_name)
 
     def close_file(self):
         self.workbook.release_resources()
@@ -82,7 +104,7 @@ class SheetSaver:
     @staticmethod
     def initialize_title_epoch(nb_epoch: int, list_to_save: list):
         # The lign of index 3 will be filled with Epoch 0 Epoch 1 Epoch 2 ...
-        index_name = 6
+        index_name = 8
         if nb_epoch is not None:
             for k in range(nb_epoch):
                 list_to_save.append([index_name, 2 + k, f"epoch {k}"])
@@ -92,16 +114,17 @@ class SheetSaver:
         parameters = dic[SheetNames.PARAMETERS.value]
         list_to_save = SheetSaver.format_parameters(parameters, 0, [])
         SheetSaver.format_parameters(dic[SheetNames.PARAMETERS_MODELS.value], 2, list_to_save)
+        SheetSaver.format_parameters(dic[SheetNames.RESULT.value], 4, list_to_save)
         SheetSaver.initialize_title_epoch(parameters[ParametersNames.NB_EPOCH.value], list_to_save)
 
-        index_name = 6
-        for name_element in dic:
-            if name_element not in [SheetNames.PARAMETERS_MODELS.value, SheetNames.PARAMETERS.value]:
-                index_name += 1
-                list_to_save.append([index_name, 1, name_element])
-                for element in dic[name_element]:
-                    # element looks like (epoch, value)
-                    list_to_save.append([index_name, 1 + element[0], element[1]])
+        index_name = 8
+        training_values = dic[SheetNames.TRAINING.value]
+        for name_element in training_values:
+            index_name += 1
+            list_to_save.append([index_name, 1, name_element])
+            for element in training_values[name_element]:
+                # element looks like (epoch, value)
+                list_to_save.append([index_name, 1 + element[0], element[1]])
         return list_to_save
 
 
@@ -109,9 +132,17 @@ if __name__ == "__main__":
     dic = {SheetNames.PARAMETERS.value: {ParametersNames.LEARNING_RATE.value: 5, ParametersNames.MOMENTUM.value: 2,
                                          ParametersNames.NB_EPOCH.value: 3},
            SheetNames.PARAMETERS_MODELS.value: {"nb layers": 3, "kernel": 4},
-           SheetNames.TRAIN_ERROR.value: [(1, 0.3), (2, 0.35), (3, 0.41)],
-           SheetNames.LOSS_FUNCTION.value: [(1, 5), (2, 2), (3, 0.27)],
-           SheetNames.TEST_ERROR.value: [(3, 0.41)]}
+           SheetNames.TRAINING.value: {
+               TrainingResult.LOSS_VAL.value: [(1, 5), (2, 2), (3, 0.27)],
+               TrainingResult.LOSS_TRAIN.value: [(1, 3), (2, 1), (3, 0.17)],
+               TrainingResult.ACCURACY.value: [(1, 0.3), (2, 0.35), (3, 0.41)],
+           },
+           SheetNames.RESULT.value: {
+               Result.FP.value: 5,
+               Result.TN.value: 100,
+               Result.TP.value: 150,
+               Result.FN.value: 50
+           }}
     saver = SheetSaver("../resources/data.xlsx")
-    print(saver.write_dic(dic=dic, sheet_name="essai_model 2"))
+    print(saver.write_dic(dictionary=dic, sheet_name="essai_model 4"))
     saver.close_file()

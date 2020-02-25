@@ -5,8 +5,7 @@ from models.Model import Model
 
 class Resnet(Model):
     def __init__(self, nb_classes):
-        super().__init__()
-        self.nb_classes=nb_classes
+        super().__init__(nb_classes_out=nb_classes)
         self.model = models.resnet18(pretrained=True)
         self.model.fc = nn.Linear(in_features=self.model.fc.in_features, out_features=self.nb_classes, bias=True)
 
