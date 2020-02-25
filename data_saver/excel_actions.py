@@ -24,14 +24,15 @@ class ParametersNames(Enum):
 
 
 class Result(Enum):
-    TP = "True Positive"
-    TN = "True Negative"
-    FP = "False Positive"
-    FN = "False Negative"
-    LOSS = "Average loss"
-    ACCURACY = "Accuracy"
-    PRECISION = "Precision"
-    RECALL = "Recall"
+    TP = "True Positive Test"
+    TN = "True Negative Test"
+    FP = "False Positive Test"
+    FN = "False Negative Test"
+    LOSS = "Average loss Test"
+    ACCURACY = "Accuracy Test"
+    PRECISION = "Precision Test"
+    RECALL = "Recall Test"
+    CONFUSION_MATRIX = "Confusion matrix Test"
 
 
 class TrainingResult(Enum):

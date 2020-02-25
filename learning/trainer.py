@@ -67,6 +67,9 @@ class TrainingGenerator:
                 results[Result.FP.value] += confusion[1]
                 results[Result.TN.value] += confusion[2]
                 results[Result.FN.value] += confusion[3]
+                results[Result.CONFUSION_MATRIX.value] = str(
+                    np.array([[results[Result.TP.value], results[Result.FP.value]],
+                              [results[Result.FN.value], results[Result.TN.value]]]))
 
             n_correct = torch.sum(preds == labels)
 
@@ -74,8 +77,10 @@ class TrainingGenerator:
             avg_accuracy += n_correct
 
         if is_binary_problem:
-            results[Result.PRECISION.value] = results[Result.TP.value] / (results[Result.TP.value] + results[Result.FP.value])
-            results[Result.RECALL.value] = results[Result.TP.value] / (results[Result.TP.value] + results[Result.FN.value])
+            results[Result.PRECISION.value] = results[Result.TP.value] / (
+                        results[Result.TP.value] + results[Result.FP.value])
+            results[Result.RECALL.value] = results[Result.TP.value] / (
+                        results[Result.TP.value] + results[Result.FN.value])
             results[Result.ACCURACY.value] = float(avg_accuracy) / len(dataset)
             results[Result.LOSS.value] = avg_loss / len(dataset)
 
@@ -136,7 +141,7 @@ class TrainingGenerator:
         precision = round(results[Result.PRECISION.value], 4)
         recall = round(results[Result.RECALL.value], 4)
         confusion_matrix = np.array([[results[Result.TP.value], results[Result.FP.value]],
-                                    [results[Result.FN.value], results[Result.TN.value]]])
+                                     [results[Result.FN.value], results[Result.TN.value]]])
 
         if is_val & (epoch is not None):
             self.print_save_val_results(batch_idx=batch_idx, epoch=epoch, accuracy=accuracy, loss_val=loss_val,

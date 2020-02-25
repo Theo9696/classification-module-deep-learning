@@ -10,7 +10,7 @@ data = import_data(batch_size=20, main_folder=DataLocation.X_RAY, split=SplitOpt
 
 # Saving information for test purposes
 SAVE_VALUE = True
-SHEET_NAME = "CNN 2 - Test 3"
+SHEET_NAME = "CNN 3 - 0"
 SOURCE_TO_SAVE_DATA = './resources/data.xlsx'
 
 generator = TrainingGenerator(model=model, data=data, number_epoch=1, print_intermediate_perf=False,
