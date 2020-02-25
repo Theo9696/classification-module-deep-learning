@@ -78,10 +78,17 @@ class TrainingGenerator:
             avg_accuracy += n_correct
 
         if is_binary_problem:
-            results[Result.PRECISION.value] = round(results[Result.TP.value] / (
-                    results[Result.TP.value] + results[Result.FP.value]), self.rounding_digit)
-            results[Result.RECALL.value] = round(results[Result.TP.value] / (
-                    results[Result.TP.value] + results[Result.FN.value]), self.rounding_digit)
+            if (results[Result.TP.value] + results[Result.FP.value]) != 0:
+                results[Result.PRECISION.value] = round(results[Result.TP.value] / (
+                        results[Result.TP.value] + results[Result.FP.value]), self.rounding_digit)
+            else:
+                results[Result.PRECISION.value] = 0
+
+            if (results[Result.TP.value] + results[Result.FN.value]) != 0:
+                results[Result.RECALL.value] = round(results[Result.TP.value] / (
+                        results[Result.TP.value] + results[Result.FN.value]), self.rounding_digit)
+            else:
+                results[Result.RECALL.value] = 0
             results[Result.ACCURACY.value] = round(float(avg_accuracy) / len(dataset), self.rounding_digit)
             results[Result.LOSS.value] = round(avg_loss / len(dataset), self.rounding_digit)
 
