@@ -13,7 +13,7 @@ import numpy as np
 class TrainingGenerator:
     def __init__(self, model: Model, data: DataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = -1,
                  print_intermediate_perf=True, save_performances=True, sheet_name: str = "", location_to_save: str = "",
-                 parameters_data_input: dict = None):
+                 parameters_data_input: dict = None, rounding_digit: int = 5):
         self._model = model.model
         self._model_info = model
         self._data = data
@@ -43,6 +43,7 @@ class TrainingGenerator:
                              },
                              SheetNames.RESULT.value: {}}
         self.sheet_name = sheet_name
+        self.rounding_digit = rounding_digit
         for element in parameters_data_input:
             self.dict_to_save[SheetNames.PARAMETERS_MODELS.value][element] = parameters_data_input[element]
 
@@ -77,12 +78,12 @@ class TrainingGenerator:
             avg_accuracy += n_correct
 
         if is_binary_problem:
-            results[Result.PRECISION.value] = results[Result.TP.value] / (
-                        results[Result.TP.value] + results[Result.FP.value])
-            results[Result.RECALL.value] = results[Result.TP.value] / (
-                        results[Result.TP.value] + results[Result.FN.value])
-            results[Result.ACCURACY.value] = float(avg_accuracy) / len(dataset)
-            results[Result.LOSS.value] = avg_loss / len(dataset)
+            results[Result.PRECISION.value] = round(results[Result.TP.value] / (
+                    results[Result.TP.value] + results[Result.FP.value]), self.rounding_digit)
+            results[Result.RECALL.value] = round(results[Result.TP.value] / (
+                    results[Result.TP.value] + results[Result.FN.value]), self.rounding_digit)
+            results[Result.ACCURACY.value] = round(float(avg_accuracy) / len(dataset), self.rounding_digit)
+            results[Result.LOSS.value] = round(avg_loss / len(dataset), self.rounding_digit)
 
         return results
 
@@ -118,7 +119,7 @@ class TrainingGenerator:
                 optimizer.step()
 
             self.show_score(epoch=epoch, item=loss.item(), device=device)
-        time_to_fit = time.time() - ts
+        time_to_fit = round(time.time() - ts, 4)
         self.dict_to_save[SheetNames.PARAMETERS_MODELS.value][ParametersNames.TIME.value] = time_to_fit
         logger.info(f"Training completed in {time_to_fit} s")
 
@@ -137,9 +138,9 @@ class TrainingGenerator:
     def print_results(self, results: dict, is_test: bool = False, is_val: bool = False, batch_idx: int = None,
                       item=None, epoch: int = None):
         loss_val = results[Result.LOSS.value]
-        accuracy = round(results[Result.ACCURACY.value], 4)
-        precision = round(results[Result.PRECISION.value], 4)
-        recall = round(results[Result.RECALL.value], 4)
+        accuracy = round(results[Result.ACCURACY.value], self.rounding_digit)
+        precision = round(results[Result.PRECISION.value], self.rounding_digit)
+        recall = round(results[Result.RECALL.value], self.rounding_digit)
         confusion_matrix = np.array([[results[Result.TP.value], results[Result.FP.value]],
                                      [results[Result.FN.value], results[Result.TN.value]]])
 
@@ -180,7 +181,7 @@ class TrainingGenerator:
 
         if self.save_val & (batch_idx is None):
             training_results = self.dict_to_save[SheetNames.TRAINING.value]
-            training_results[TrainingResult.LOSS_TRAIN.value].append((epoch + 1, item))
+            training_results[TrainingResult.LOSS_TRAIN.value].append((epoch + 1, round(item, self.rounding_digit)))
             training_results[TrainingResult.LOSS_VAL.value].append((epoch + 1, loss_val))
             training_results[TrainingResult.ACCURACY.value].append((epoch + 1, accuracy))
             training_results[TrainingResult.PRECISION.value].append((epoch + 1, precision))
