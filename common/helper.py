@@ -15,6 +15,7 @@ class DataLocation(Enum):
     HAND = DATA_FOLDER + "leap"
     PLANT = DATA_FOLDER + "plant-seedlings"
     WHALES = DATA_FOLDER + "whale"
+    BLOOD = DATA_FOLDER + "blood-cells/dataset2-master/images"
 
 
 class ModelEnum(Enum):

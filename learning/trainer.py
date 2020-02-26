@@ -154,7 +154,7 @@ class TrainingGenerator:
                                      [results[Result.FN.value], results[Result.TN.value]]]) if (
             more_info) else None
 
-        if not is_test & (epoch is not None):
+        if (not is_test) & (epoch is not None):
             self.print_save_val_results(batch_idx=batch_idx, epoch=epoch, accuracy=accuracy, loss_val=loss_val,
                                         item=item, recall=recall, precision=precision,
                                         confusion_matrix=confusion_matrix)
