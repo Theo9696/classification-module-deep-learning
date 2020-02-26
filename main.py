@@ -2,11 +2,10 @@ from learning.trainer import TrainingGenerator
 from common.data_imports import SplitOptions
 from common.helper import build_model, import_data, ModelEnum, DataLocation, train, get_nb_classes
 from common.formatter_from_csv import csv_format_into_folder
-import os
 
 # If necessary
 FORMAT_FROM_CSV_INTO_FOLDER = False
-DATA_STUDIED = DataLocation.PLANT
+DATA_STUDIED = DataLocation.BLOOD
 NUM_CLASSES = get_nb_classes(DATA_STUDIED.value + "/train")
 
 
@@ -19,16 +18,16 @@ def format_csv():
 def main():
     model = build_model(ModelEnum.CNN2, nb_classes=NUM_CLASSES, depth_input=3)
 
-    data = import_data(batch_size=30, main_folder=DATA_STUDIED, split=SplitOptions.SPLIT_ALL, train_size=0.75,
+    data = import_data(batch_size=70, main_folder=DATA_STUDIED, split=SplitOptions.SPLIT_TRAIN, train_size=0.75,
                        test_size=0.15)
 
     # Saving information for test purposes
     save_value = True
-    sheet_name = "Test Plant CNN 2"
+    sheet_name = "Test Blood CNN 2 - 10 epochs"
     source_to_save_data = './resources/data.xlsx'
     rounding_digit = 5
 
-    generator = TrainingGenerator(model=model, data=data, number_epoch=2, print_intermediate_perf=False,
+    generator = TrainingGenerator(model=model, data=data, number_epoch=10, print_intermediate_perf=False,
                                   parameters_data_input=data.parameters_data_input, rounding_digit=rounding_digit,
                                   save_performances=save_value, sheet_name=sheet_name,
                                   location_to_save=source_to_save_data)
@@ -38,6 +37,6 @@ def main():
 
 if __name__ == "__main__":
     # if FORMAT_FROM_CSV_INTO_FOLDER:
-        # format_csv()
+    #     format_csv()
     # print(NUM_CLASSES)
     main()

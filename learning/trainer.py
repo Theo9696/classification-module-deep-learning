@@ -25,7 +25,7 @@ class TrainingGenerator:
         self.save_val = save_performances
         self.sheet_saver = SheetSaver(location_to_save)
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.is_binary_problem = is_binary_problem = self._model_info.nb_classes_out == 2
+        self.is_binary_problem = self._model_info.nb_classes_out == 2
         self.dict_to_save = {SheetNames.PARAMETERS.value: {ParametersNames.MODEL.value: type(self._model).__name__,
                                                            ParametersNames.NB_EPOCH.value: self._number_epoch,
                                                            ParametersNames.LEARNING_RATE.value: self._lr,
@@ -56,6 +56,7 @@ class TrainingGenerator:
         results = {Result.FN.value: 0, Result.FP.value: 0, Result.TN.value: 0,
                    Result.TP.value: 0} if self.is_binary_problem else {}
         loader = torch.utils.data.DataLoader(dataset, batch_size=8, shuffle=False, num_workers=2)
+        confusion = np.zeros([self._model_info.nb_classes_out, self._model_info.nb_classes_out])
         for data in loader:
             inputs, labels = data
             inputs, labels = inputs.to(device), labels.to(device)
@@ -70,9 +71,13 @@ class TrainingGenerator:
                 results[Result.FP.value] += confusion[1]
                 results[Result.TN.value] += confusion[2]
                 results[Result.FN.value] += confusion[3]
-                results[Result.CONFUSION_MATRIX.value] = str(
-                    np.array([[results[Result.TP.value], results[Result.FP.value]],
-                              [results[Result.FN.value], results[Result.TN.value]]]))
+                temporary_confusion = np.array([[results[Result.TP.value], results[Result.FP.value]],
+                                                [results[Result.FN.value], results[Result.TN.value]]])
+            else:
+                TrainingGenerator.confusion_multi_class(prediction=preds,
+                                                        truth=labels,
+                                                        confusion_matrix=confusion)
+                temporary_confusion = confusion
 
             n_correct = torch.sum(preds == labels)
 
@@ -93,8 +98,9 @@ class TrainingGenerator:
                 results[Result.RECALL.value] = 0
         results[Result.ACCURACY.value] = round(float(avg_accuracy) / len(dataset), self.rounding_digit)
         results[Result.LOSS.value] = round(avg_loss / len(dataset), self.rounding_digit)
+        results[Result.CONFUSION_MATRIX.value] = str(temporary_confusion)
 
-        return results
+        return results, temporary_confusion
 
     def train(self):
         ts = time.time()
@@ -116,7 +122,6 @@ class TrainingGenerator:
             # training
             self._model.train(True)  # mode "train" agit sur "dropout" ou "batchnorm"
             for batch_idx, (x, target) in enumerate(self._data.train_loader):
-                logger.info(batch_idx)
                 optimizer.zero_grad()
                 x, target = Variable(x).to(self.device), Variable(target).to(self.device)
                 out = self._model(x)
@@ -134,25 +139,25 @@ class TrainingGenerator:
 
     def show_score(self, epoch: int, item, device, batch_idx: int = None, is_val: bool = False):
         self._model.train(False)
-        results = self.evaluate(self._model, self._data.dataset_val, device)
-        self.print_results(is_val=is_val, results=results, batch_idx=batch_idx, item=item, epoch=epoch)
+        results, temporary_confusion = self.evaluate(self._model, self._data.dataset_val, device)
+        self.print_results(is_val=is_val, results=results, batch_idx=batch_idx, item=item, epoch=epoch,
+                           confusion=temporary_confusion)
         self._model.train(True)
 
     def test(self):
-        results = self.evaluate(self._model, self._data.dataset_test, self.device)
-        self.print_results(is_test=True, results=results)
+        results, temporary_confusion = self.evaluate(self._model, self._data.dataset_test, self.device)
+        self.print_results(is_test=True, results=results, confusion=temporary_confusion)
         self._model.train(False)
 
-    def print_results(self, results: dict, is_test: bool = False, is_val: bool = False, batch_idx: int = None,
+    def print_results(self, results: dict, confusion, is_test: bool = False, is_val: bool = False,
+                      batch_idx: int = None,
                       item=None, epoch: int = None):
         more_info = self.is_binary_problem & (is_val | is_test)
         loss_val = results[Result.LOSS.value]
         accuracy = round(results[Result.ACCURACY.value], self.rounding_digit)
         precision = round(results[Result.PRECISION.value], self.rounding_digit) if more_info else None
         recall = round(results[Result.RECALL.value], self.rounding_digit) if more_info else None
-        confusion_matrix = np.array([[results[Result.TP.value], results[Result.FP.value]],
-                                     [results[Result.FN.value], results[Result.TN.value]]]) if (
-            more_info) else None
+        confusion_matrix = confusion if (is_val | is_test) else None
 
         if (not is_test) & (epoch is not None):
             self.print_save_val_results(batch_idx=batch_idx, epoch=epoch, accuracy=accuracy, loss_val=loss_val,
@@ -178,14 +183,16 @@ class TrainingGenerator:
 
     def print_save_val_results(self, batch_idx: int, item, loss_val: float, accuracy: float, epoch: int,
                                precision: float = None, recall: float = None, confusion_matrix=None):
-        message = f"loss train: {round(item if item is not None else 0, self.rounding_digit)} val: {round(loss_val, self.rounding_digit)} Acc: {accuracy * 100}%"
+        message = f"loss train: {round(item if item is not None else 0, self.rounding_digit)} val: {round(loss_val, self.rounding_digit)} Acc: {accuracy * 100}% "
         if batch_idx is not None:
             message = f"EPOCH {epoch} | batch: {batch_idx} " + message
         else:
             message = f"EPOCH {epoch} | " + message
 
-        if (precision is not None) & (recall is not None) & (confusion_matrix is not None):
-            message += f" | precision: {precision}  recall: {recall} | confusion matrix: \n {str(confusion_matrix)}"
+        if (precision is not None) & (recall is not None):
+            message += f" | precision: {precision}  recall: {recall} "
+        if confusion_matrix is not None:
+            message += f"| confusion matrix: \n {str(confusion_matrix)}"
 
         logger.info(message)
 
@@ -231,3 +238,8 @@ class TrainingGenerator:
         false_negatives = torch.sum(confusion_vector == 2 / 3).item()
 
         return true_positives, false_positives, true_negatives, false_negatives
+
+    @staticmethod
+    def confusion_multi_class(prediction: torch.Tensor, truth: torch.Tensor, confusion_matrix):
+        for i in range(len(prediction)):
+            confusion_matrix[prediction[i]][truth[i]] += 1
