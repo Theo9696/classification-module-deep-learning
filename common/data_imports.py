@@ -17,7 +17,7 @@ class SplitOptions(Enum):
 
 class DataImporter:
     def __init__(self, main_folder: str, batch_size: int = 100, split: SplitOptions = SplitOptions.SPLIT_ALL,
-                 train_size: float = 0.8, size_image_input_model: int = 256):
+                 train_size: float = 0.8, test_size: float = 0.8, size_image_input_model: int = 256):
 
         np.random.seed(42)
         self.train_size = train_size
@@ -59,12 +59,14 @@ class DataImporter:
         logger.info(f'total testing batch number: {len(self.test_loader)}')
 
     @staticmethod
-    def build_dataset(split: SplitOptions, main_folder: str, train_size: float, size_image_input_model: int):
+    def build_dataset(split: SplitOptions, main_folder: str, train_size: float, size_image_input_model: int,
+                      test_size: float = 0.8):
         trans = transforms.Compose([transforms.Resize([size_image_input_model, size_image_input_model]),
                                     transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
 
         if split.value is SplitOptions.SPLIT_ALL.value:
-            train_data, val_data, test_data = DataImporter.split_data_all(main_folder, trans)
+            train_data, val_data, test_data = DataImporter.split_data_all(main_folder, trans, train_size=train_size,
+                                                                          test_size=test_size)
             dataset_train = DataImporter.format_dataset(main_folder, trans, train_data)
             dataset_val = DataImporter.format_dataset(main_folder, trans, val_data)
             dataset_test = DataImporter.format_dataset(main_folder, trans, test_data)
@@ -91,10 +93,10 @@ class DataImporter:
         return dataset
 
     @staticmethod
-    def split_data_all(main_folder, trans):
+    def split_data_all(main_folder, trans, train_size: float, test_size: float):
         dataset_full = datasets.ImageFolder(root=main_folder, transform=trans)
-        train_data, test_data = train_test_split(dataset_full.samples)
-        train_data, val_data = train_test_split(train_data)
+        train_data, test_data = train_test_split(dataset_full.samples, train_size=test_size)
+        train_data, val_data = train_test_split(train_data, train_size=train_size)
         return train_data, val_data, test_data
 
     @staticmethod

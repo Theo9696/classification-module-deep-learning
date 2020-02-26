@@ -1,21 +1,43 @@
 from learning.trainer import TrainingGenerator
 from common.data_imports import SplitOptions
-from common.helper import build_model, import_data, ModelEnum, DataLocation, train
+from common.helper import build_model, import_data, ModelEnum, DataLocation, train, get_nb_classes
+from common.formatter_from_csv import csv_format_into_folder
+import os
 
-NUM_CLASSES = 2
+# If necessary
+FORMAT_FROM_CSV_INTO_FOLDER = False
+DATA_STUDIED = DataLocation.PLANT
+NUM_CLASSES = get_nb_classes(DATA_STUDIED.value + "/train")
 
-model = build_model(ModelEnum.CNN2, nb_classes=NUM_CLASSES, depth_input=3)
 
-data = import_data(batch_size=20, main_folder=DataLocation.X_RAY, split=SplitOptions.SPLIT_TRAIN, train_size=0.75)
+def format_csv():
+    csv_format_into_folder(location_csv=DataLocation.WHALES.value + "/train.csv",
+                           location_folder=DataLocation.WHALES.value + "/train/",
+                           location_img=DataLocation.WHALES.value + "/train/train")
 
-# Saving information for test purposes
-SAVE_VALUE = True
-SHEET_NAME = "CNN 3 - 1"
-SOURCE_TO_SAVE_DATA = './resources/data.xlsx'
-ROUNDING_DIGIT = 5
 
-generator = TrainingGenerator(model=model, data=data, number_epoch=15, print_intermediate_perf=False,
-                              parameters_data_input=data.parameters_data_input, rounding_digit=ROUNDING_DIGIT,
-                              save_performances=SAVE_VALUE, sheet_name=SHEET_NAME, location_to_save=SOURCE_TO_SAVE_DATA)
+def main():
+    model = build_model(ModelEnum.CNN2, nb_classes=NUM_CLASSES, depth_input=3)
 
-train(generator)
+    data = import_data(batch_size=30, main_folder=DATA_STUDIED, split=SplitOptions.SPLIT_ALL, train_size=0.75,
+                       test_size=0.15)
+
+    # Saving information for test purposes
+    save_value = True
+    sheet_name = "Test Plant CNN 2"
+    source_to_save_data = './resources/data.xlsx'
+    rounding_digit = 5
+
+    generator = TrainingGenerator(model=model, data=data, number_epoch=2, print_intermediate_perf=False,
+                                  parameters_data_input=data.parameters_data_input, rounding_digit=rounding_digit,
+                                  save_performances=save_value, sheet_name=sheet_name,
+                                  location_to_save=source_to_save_data)
+
+    train(generator)
+
+
+if __name__ == "__main__":
+    # if FORMAT_FROM_CSV_INTO_FOLDER:
+        # format_csv()
+    # print(NUM_CLASSES)
+    main()

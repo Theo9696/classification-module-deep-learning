@@ -24,6 +24,8 @@ class TrainingGenerator:
         self.print_val = print_intermediate_perf
         self.save_val = save_performances
         self.sheet_saver = SheetSaver(location_to_save)
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.is_binary_problem = is_binary_problem = self._model_info.nb_classes_out == 2
         self.dict_to_save = {SheetNames.PARAMETERS.value: {ParametersNames.MODEL.value: type(self._model).__name__,
                                                            ParametersNames.NB_EPOCH.value: self._number_epoch,
                                                            ParametersNames.LEARNING_RATE.value: self._lr,
@@ -50,9 +52,9 @@ class TrainingGenerator:
     def evaluate(self, model, dataset, device):
         avg_loss = 0.
         avg_accuracy = 0
-        is_binary_problem = self._model_info.nb_classes_out == 2
+
         results = {Result.FN.value: 0, Result.FP.value: 0, Result.TN.value: 0,
-                   Result.TP.value: 0} if is_binary_problem else {}
+                   Result.TP.value: 0} if self.is_binary_problem else {}
         loader = torch.utils.data.DataLoader(dataset, batch_size=8, shuffle=False, num_workers=2)
         for data in loader:
             inputs, labels = data
@@ -62,7 +64,7 @@ class TrainingGenerator:
             loss = self.criterion(outputs, labels)
             _, preds = torch.max(outputs, 1)
 
-            if is_binary_problem:
+            if self.is_binary_problem:
                 confusion = TrainingGenerator.confusion(prediction=preds, truth=labels, device=device)
                 results[Result.TP.value] += confusion[0]
                 results[Result.FP.value] += confusion[1]
@@ -77,7 +79,7 @@ class TrainingGenerator:
             avg_loss += loss.item()
             avg_accuracy += n_correct
 
-        if is_binary_problem:
+        if self.is_binary_problem:
             if (results[Result.TP.value] + results[Result.FP.value]) != 0:
                 results[Result.PRECISION.value] = round(results[Result.TP.value] / (
                         results[Result.TP.value] + results[Result.FP.value]), self.rounding_digit)
@@ -89,8 +91,8 @@ class TrainingGenerator:
                         results[Result.TP.value] + results[Result.FN.value]), self.rounding_digit)
             else:
                 results[Result.RECALL.value] = 0
-            results[Result.ACCURACY.value] = round(float(avg_accuracy) / len(dataset), self.rounding_digit)
-            results[Result.LOSS.value] = round(avg_loss / len(dataset), self.rounding_digit)
+        results[Result.ACCURACY.value] = round(float(avg_accuracy) / len(dataset), self.rounding_digit)
+        results[Result.LOSS.value] = round(avg_loss / len(dataset), self.rounding_digit)
 
         return results
 
@@ -100,8 +102,7 @@ class TrainingGenerator:
             logger.error("Corrupted learning datas")
 
         # we use GPU if available, otherwise CPU
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self._model.to(device)
+        self._model.to(self.device)
 
         # optimization hyperparameters
         if self._momentum:
@@ -115,43 +116,45 @@ class TrainingGenerator:
             # training
             self._model.train(True)  # mode "train" agit sur "dropout" ou "batchnorm"
             for batch_idx, (x, target) in enumerate(self._data.train_loader):
+                logger.info(batch_idx)
                 optimizer.zero_grad()
-                x, target = Variable(x).to(device), Variable(target).to(device)
+                x, target = Variable(x).to(self.device), Variable(target).to(self.device)
                 out = self._model(x)
                 loss = loss_fn(out, target)
 
                 if self.print_val & (batch_idx % 5 == 0):
-                    self.show_score(epoch=epoch, batch_idx=batch_idx, item=loss.item(), device=device)
+                    self.show_score(epoch=epoch, batch_idx=batch_idx, item=loss.item(), device=self.device)
                 loss.backward()  # backtracking automatic
                 optimizer.step()
 
-            self.show_score(epoch=epoch, item=loss.item(), device=device)
+            self.show_score(epoch=epoch, item=loss.item(), device=self.device, is_val=True)
         time_to_fit = round(time.time() - ts, 4)
         self.dict_to_save[SheetNames.PARAMETERS_MODELS.value][ParametersNames.TIME.value] = time_to_fit
         logger.info(f"Training completed in {time_to_fit} s")
 
-    def show_score(self, epoch: int, item, device, batch_idx: int = None):
+    def show_score(self, epoch: int, item, device, batch_idx: int = None, is_val: bool = False):
         self._model.train(False)
         results = self.evaluate(self._model, self._data.dataset_val, device)
-        self.print_results(is_val=True, results=results, batch_idx=batch_idx, item=item, epoch=epoch)
+        self.print_results(is_val=is_val, results=results, batch_idx=batch_idx, item=item, epoch=epoch)
         self._model.train(True)
 
     def test(self):
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        results = self.evaluate(self._model, self._data.dataset_test, device)
+        results = self.evaluate(self._model, self._data.dataset_test, self.device)
         self.print_results(is_test=True, results=results)
         self._model.train(False)
 
     def print_results(self, results: dict, is_test: bool = False, is_val: bool = False, batch_idx: int = None,
                       item=None, epoch: int = None):
+        more_info = self.is_binary_problem & (is_val | is_test)
         loss_val = results[Result.LOSS.value]
         accuracy = round(results[Result.ACCURACY.value], self.rounding_digit)
-        precision = round(results[Result.PRECISION.value], self.rounding_digit)
-        recall = round(results[Result.RECALL.value], self.rounding_digit)
+        precision = round(results[Result.PRECISION.value], self.rounding_digit) if more_info else None
+        recall = round(results[Result.RECALL.value], self.rounding_digit) if more_info else None
         confusion_matrix = np.array([[results[Result.TP.value], results[Result.FP.value]],
-                                     [results[Result.FN.value], results[Result.TN.value]]])
+                                     [results[Result.FN.value], results[Result.TN.value]]]) if (
+            more_info) else None
 
-        if is_val & (epoch is not None):
+        if not is_test & (epoch is not None):
             self.print_save_val_results(batch_idx=batch_idx, epoch=epoch, accuracy=accuracy, loss_val=loss_val,
                                         item=item, recall=recall, precision=precision,
                                         confusion_matrix=confusion_matrix)
@@ -174,8 +177,8 @@ class TrainingGenerator:
         logger.info(message)
 
     def print_save_val_results(self, batch_idx: int, item, loss_val: float, accuracy: float, epoch: int,
-                               precision: float, recall: float, confusion_matrix):
-        message = f"loss train: {round(item, 3)} val: {round(loss_val, 3)} Acc: {accuracy * 100}%"
+                               precision: float = None, recall: float = None, confusion_matrix=None):
+        message = f"loss train: {round(item if item is not None else 0, self.rounding_digit)} val: {round(loss_val, self.rounding_digit)} Acc: {accuracy * 100}%"
         if batch_idx is not None:
             message = f"EPOCH {epoch} | batch: {batch_idx} " + message
         else:
@@ -191,13 +194,14 @@ class TrainingGenerator:
             training_results[TrainingResult.LOSS_TRAIN.value].append((epoch + 1, round(item, self.rounding_digit)))
             training_results[TrainingResult.LOSS_VAL.value].append((epoch + 1, loss_val))
             training_results[TrainingResult.ACCURACY.value].append((epoch + 1, accuracy))
-            training_results[TrainingResult.PRECISION.value].append((epoch + 1, precision))
-            training_results[TrainingResult.RECALL.value].append((epoch + 1, recall))
-            training_results[TrainingResult.CONFUSION_MATRIX.value].append((epoch + 1, str(confusion_matrix)))
-            training_results[TrainingResult.TP.value].append((epoch + 1, int(confusion_matrix[0][0])))
-            training_results[TrainingResult.FP.value].append((epoch + 1, int(confusion_matrix[0][1])))
-            training_results[TrainingResult.FN.value].append((epoch + 1, int(confusion_matrix[1][0])))
-            training_results[TrainingResult.TN.value].append((epoch + 1, int(confusion_matrix[1][1])))
+            if self.is_binary_problem:
+                training_results[TrainingResult.PRECISION.value].append((epoch + 1, precision))
+                training_results[TrainingResult.RECALL.value].append((epoch + 1, recall))
+                training_results[TrainingResult.CONFUSION_MATRIX.value].append((epoch + 1, str(confusion_matrix)))
+                training_results[TrainingResult.TP.value].append((epoch + 1, int(confusion_matrix[0][0])))
+                training_results[TrainingResult.FP.value].append((epoch + 1, int(confusion_matrix[0][1])))
+                training_results[TrainingResult.FN.value].append((epoch + 1, int(confusion_matrix[1][0])))
+                training_results[TrainingResult.TN.value].append((epoch + 1, int(confusion_matrix[1][1])))
 
     @staticmethod
     def confusion(prediction: torch.Tensor, truth: torch.Tensor, device):
