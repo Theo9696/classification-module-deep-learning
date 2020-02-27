@@ -179,7 +179,7 @@ class TrainingGenerator:
     @staticmethod
     def print_save_test_results(loss_val: float, accuracy: float, precision: float, recall: float,
                                 confusion_matrix):
-        message = f"TEST | avf loss test: {loss_val} Acc: {accuracy * 100}% "
+        message = f"TEST | avg loss test: {loss_val} Acc: {accuracy * 100}% "
 
         if (precision is not None) & (recall is not None):
             message += f" | precision: {precision}  recall: {recall} "

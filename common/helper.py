@@ -7,8 +7,8 @@ from learning.trainer import TrainingGenerator
 from data_saver.excel_actions import SheetSaver
 import os
 
-
 DATA_FOLDER = "data/"
+
 
 class DataLocation(Enum):
     X_RAY = DATA_FOLDER + "chest-xray-pneumonia/chest_xray/chest_xray"
@@ -43,18 +43,18 @@ def build_model(model: ModelEnum, nb_classes: int, depth_input: int):
 
 
 def import_data(batch_size: int, main_folder: DataLocation, split: SplitOptions, train_size: float,
-                test_size: float = 0.2):
+                test_size: float = 0.2, k_fold: bool = False, nb_chunk: int = 4):
     logger.info("Creation of the structure of the models ... completed")
     logger.info("Importation and separation of data ... ")
 
     return DataImporter(batch_size=batch_size, main_folder=main_folder.value, split=split, train_size=train_size,
-                        test_size=1 - test_size)
+                        test_size=1 - test_size, k_fold=k_fold, nb_chunk=nb_chunk)
 
 
-def train(gen: TrainingGenerator):
+def train(gen: TrainingGenerator, k_fold: bool = False, fold: int = 1):
     logger.info("Importation and separation of data ... completed ")
 
-    logger.info("Training ....")
+    logger.info("Training ...." + (f"fold {fold}" if k_fold else ""))
     if gen.save_val:
         # Test if the sheet name is free
         if SheetSaver(gen.sheet_saver.location).test_name_sheet(gen.sheet_name):
