@@ -1,14 +1,30 @@
+import time
+
+from common.logger import logger
 from learning.trainer import TrainingGenerator
 from common.data_imports import SplitOptions
 from common.helper import build_model, import_data, ModelEnum, DataLocation, train, get_nb_classes
 from common.formatter_from_csv import csv_format_into_folder
 
-# If necessary
-FORMAT_FROM_CSV_INTO_FOLDER = False
+# CONFIGURATION
+FORMAT_FROM_CSV_INTO_FOLDER = False  # If necessary
+SPLIT = SplitOptions.SPLIT_ALL
+
 DATA_STUDIED = DataLocation.PLANT
-NUM_CLASSES = get_nb_classes(DATA_STUDIED.value + "/train") | get_nb_classes(DATA_STUDIED.value)
+NUM_CLASSES = get_nb_classes(DATA_STUDIED.value + "/train") or get_nb_classes(DATA_STUDIED.value)
+MODEL_TYPE = ModelEnum.RESNET
+NUM_EPOCHS = 10
+BATCH_SIZE = 40
+TRAIN_SIZE = 0.75
+TEST_SIZE = 1 - TRAIN_SIZE
 CROSS_VALIDATION = True
 NB_FOLD = 4 if CROSS_VALIDATION else 1
+
+MODELS = [ModelEnum.RESNET]
+
+SAVE_VALUE = True
+OUTPUT_FILE = './resources/data.xlsx'
+ROUNDING_DIGIT = 5
 
 
 def format_csv():
@@ -18,28 +34,24 @@ def format_csv():
 
 
 def main():
-    list_model = [
-        build_model(ModelEnum.CNN2, nb_classes=NUM_CLASSES, depth_input=3),
-        build_model(ModelEnum.CNN3, nb_classes=NUM_CLASSES, depth_input=3),
-        build_model(ModelEnum.CNN4, nb_classes=NUM_CLASSES, depth_input=3)
-    ]
-
-    data = import_data(batch_size=80, main_folder=DATA_STUDIED, split=SplitOptions.SPLIT_ALL, train_size=0.75,
-                       test_size=0.15, k_fold=CROSS_VALIDATION, nb_chunk=NB_FOLD)
+    data = import_data(batch_size=BATCH_SIZE, main_folder=DATA_STUDIED, split=SPLIT, train_size=TRAIN_SIZE,
+                       test_size=TEST_SIZE, k_fold=CROSS_VALIDATION, nb_chunk=NB_FOLD)
 
     # Saving information for test purposes
-    save_value = True
-    sheet_name = "CV Test"
-    source_to_save_data = './resources/data.xlsx'
-    rounding_digit = 5
+    sheet_name = f"{DATA_STUDIED.name} {MODEL_TYPE.name} - {NUM_EPOCHS} epoch"
 
-    for model in list_model:
+    for model_type in MODELS:
         for k in range(NB_FOLD):
             sheet_name_fold = sheet_name + f" - fold {k}"
-            generator = TrainingGenerator(model=model, data=data.data[k], number_epoch=1, print_intermediate_perf=False,
-                                          parameters_data_input=data.parameters_data_input, rounding_digit=rounding_digit,
-                                          save_performances=save_value, sheet_name=sheet_name_fold,
-                                          location_to_save=source_to_save_data)
+            model = build_model(model_type, nb_classes=NUM_CLASSES, depth_input=3)
+            generator = TrainingGenerator(model=model, data=data.data[k],
+                                          number_epoch=NUM_EPOCHS,
+                                          print_intermediate_perf=False,
+                                          parameters_data_input=data.parameters_data_input,
+                                          rounding_digit=ROUNDING_DIGIT,
+                                          save_performances=SAVE_VALUE,
+                                          sheet_name=sheet_name_fold,
+                                          location_to_save=OUTPUT_FILE)
 
             train(generator, k_fold=CROSS_VALIDATION, fold=k)
 
@@ -48,4 +60,6 @@ if __name__ == "__main__":
     # if FORMAT_FROM_CSV_INTO_FOLDER:
     #     format_csv()
     # print(NUM_CLASSES)
+    t0 = time.time()
     main()
+    print(f"Process terminated in {time.time() - t0:.2f} s")
