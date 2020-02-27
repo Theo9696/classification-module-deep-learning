@@ -18,25 +18,30 @@ def format_csv():
 
 
 def main():
-    model = build_model(ModelEnum.CNN2, nb_classes=NUM_CLASSES, depth_input=3)
+    list_model = [
+        build_model(ModelEnum.CNN2, nb_classes=NUM_CLASSES, depth_input=3),
+        build_model(ModelEnum.CNN3, nb_classes=NUM_CLASSES, depth_input=3),
+        build_model(ModelEnum.CNN4, nb_classes=NUM_CLASSES, depth_input=3)
+    ]
 
     data = import_data(batch_size=80, main_folder=DATA_STUDIED, split=SplitOptions.SPLIT_ALL, train_size=0.75,
                        test_size=0.15, k_fold=CROSS_VALIDATION, nb_chunk=NB_FOLD)
 
     # Saving information for test purposes
     save_value = True
-    sheet_name = "P CNN2 CV Test"
+    sheet_name = "CV Test"
     source_to_save_data = './resources/data.xlsx'
     rounding_digit = 5
 
-    for k in range(NB_FOLD):
-        sheet_name_fold = sheet_name + f" - fold {k}"
-        generator = TrainingGenerator(model=model, data=data.data[k], number_epoch=1, print_intermediate_perf=False,
-                                      parameters_data_input=data.parameters_data_input, rounding_digit=rounding_digit,
-                                      save_performances=save_value, sheet_name=sheet_name_fold,
-                                      location_to_save=source_to_save_data)
+    for model in list_model:
+        for k in range(NB_FOLD):
+            sheet_name_fold = sheet_name + f" - fold {k}"
+            generator = TrainingGenerator(model=model, data=data.data[k], number_epoch=1, print_intermediate_perf=False,
+                                          parameters_data_input=data.parameters_data_input, rounding_digit=rounding_digit,
+                                          save_performances=save_value, sheet_name=sheet_name_fold,
+                                          location_to_save=source_to_save_data)
 
-        train(generator, k_fold=CROSS_VALIDATION, fold=NB_FOLD)
+            train(generator, k_fold=CROSS_VALIDATION, fold=k)
 
 
 if __name__ == "__main__":
