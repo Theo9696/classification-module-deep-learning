@@ -13,7 +13,7 @@ DATA_FOLDER = "data/"
 class DataLocation(Enum):
     X_RAY = DATA_FOLDER + "chest-xray-pneumonia/chest_xray/chest_xray"
     HAND = DATA_FOLDER + "leap"
-    PLANT = DATA_FOLDER + "plant-seedlings"
+    PLANT = DATA_FOLDER + "plant-seedlings/train"
     WHALES = DATA_FOLDER + "whale"
     BLOOD = DATA_FOLDER + "blood-cells/dataset2-master/dataset2-master/images"
 

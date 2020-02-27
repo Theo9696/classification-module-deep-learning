@@ -95,14 +95,14 @@ class DataImporter:
     @staticmethod
     def split_data_all(main_folder, trans, train_size: float, test_size: float):
         dataset_full = datasets.ImageFolder(root=main_folder, transform=trans)
-        train_data, test_data = train_test_split(dataset_full.samples, train_size=test_size)
-        train_data, val_data = train_test_split(train_data, train_size=train_size)
+        train_data, test_data = train_test_split(dataset_full.samples, train_size=test_size, shuffle=True)
+        train_data, val_data = train_test_split(train_data, train_size=train_size, shuffle=True)
         return train_data, val_data, test_data
 
     @staticmethod
     def split_data_train(main_folder, trans, train_size: float):
         dataset_full = datasets.ImageFolder(root=main_folder, transform=trans)
-        train_data, val_data = train_test_split(dataset_full.samples, train_size=train_size)
+        train_data, val_data = train_test_split(dataset_full.samples, train_size=train_size, shuffle=True)
         return train_data, val_data
 
     def imshow(self, tensor, title=None):

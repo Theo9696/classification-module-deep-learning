@@ -121,27 +121,32 @@ class TrainingGenerator:
         for epoch in range(self._number_epoch):
             # training
             self._model.train(True)  # mode "train" agit sur "dropout" ou "batchnorm"
+            avg_loss_train = 0
             for batch_idx, (x, target) in enumerate(self._data.train_loader):
                 optimizer.zero_grad()
                 x, target = Variable(x).to(self.device), Variable(target).to(self.device)
                 out = self._model(x)
                 loss = loss_fn(out, target)
+                avg_loss_train += loss.item()
 
                 if self.print_val & (batch_idx % 5 == 0):
-                    self.show_score(epoch=epoch, batch_idx=batch_idx, item=loss.item(), device=self.device)
+                    self.show_score(epoch=epoch, batch_idx=batch_idx, loss=loss.item(), device=self.device,
+                                    avg_loss=avg_loss_train)
                 loss.backward()  # backtracking automatic
                 optimizer.step()
 
-            self.show_score(epoch=epoch, item=loss.item(), device=self.device, is_val=True)
+            self.show_score(epoch=epoch, avg_loss=avg_loss_train / len(self._data.train_loader), loss=loss.item(),
+                            device=self.device,
+                            is_val=True)
         time_to_fit = round(time.time() - ts, 4)
         self.dict_to_save[SheetNames.PARAMETERS_MODELS.value][ParametersNames.TIME.value] = time_to_fit
         logger.info(f"Training completed in {time_to_fit} s")
 
-    def show_score(self, epoch: int, item, device, batch_idx: int = None, is_val: bool = False):
+    def show_score(self, epoch: int, loss, avg_loss, device, batch_idx: int = None, is_val: bool = False):
         self._model.train(False)
         results, temporary_confusion = self.evaluate(self._model, self._data.dataset_val, device)
-        self.print_results(is_val=is_val, results=results, batch_idx=batch_idx, item=item, epoch=epoch,
-                           confusion=temporary_confusion)
+        self.print_results(is_val=is_val, results=results, batch_idx=batch_idx, loss=loss, epoch=epoch,
+                           confusion=temporary_confusion, avg_loss=avg_loss)
         self._model.train(True)
 
     def test(self):
@@ -151,7 +156,7 @@ class TrainingGenerator:
 
     def print_results(self, results: dict, confusion, is_test: bool = False, is_val: bool = False,
                       batch_idx: int = None,
-                      item=None, epoch: int = None):
+                      loss=None, epoch: int = None, avg_loss=None):
         more_info = self.is_binary_problem & (is_val | is_test)
         loss_val = results[Result.LOSS.value]
         accuracy = round(results[Result.ACCURACY.value], self.rounding_digit)
@@ -161,8 +166,8 @@ class TrainingGenerator:
 
         if (not is_test) & (epoch is not None):
             self.print_save_val_results(batch_idx=batch_idx, epoch=epoch, accuracy=accuracy, loss_val=loss_val,
-                                        item=item, recall=recall, precision=precision,
-                                        confusion_matrix=confusion_matrix)
+                                        loss=loss, recall=recall, precision=precision,
+                                        confusion_matrix=confusion_matrix, avg_loss=avg_loss)
 
         if is_test:
             self.print_save_test_results(loss_val=loss_val, accuracy=accuracy, precision=precision, recall=recall,
@@ -174,16 +179,20 @@ class TrainingGenerator:
     @staticmethod
     def print_save_test_results(loss_val: float, accuracy: float, precision: float, recall: float,
                                 confusion_matrix):
-        message = f"TEST | loss val: {loss_val} Acc: {accuracy * 100}%"
+        message = f"TEST | avf loss test: {loss_val} Acc: {accuracy * 100}% "
 
-        if (precision is not None) & (recall is not None) & (confusion_matrix is not None):
-            message += f" | precision: {precision}  recall: {recall}  confusion matrix: \n {str(confusion_matrix)}"
+        if (precision is not None) & (recall is not None):
+            message += f" | precision: {precision}  recall: {recall} "
+        if confusion_matrix is not None:
+            message += f"confusion matrix: \n {str(confusion_matrix)}"
 
         logger.info(message)
 
-    def print_save_val_results(self, batch_idx: int, item, loss_val: float, accuracy: float, epoch: int,
+    def print_save_val_results(self, batch_idx: int, loss, loss_val: float, accuracy: float, epoch: int, avg_loss,
                                precision: float = None, recall: float = None, confusion_matrix=None):
-        message = f"loss train: {round(item if item is not None else 0, self.rounding_digit)} val: {round(loss_val, self.rounding_digit)} Acc: {accuracy * 100}% "
+        message = f"avg loss train: {round(avg_loss if avg_loss is not None else 0, self.rounding_digit)}" \
+                  f" loss train: {round(loss if loss is not None else 0, self.rounding_digit)} " \
+                  f"val: {round(loss_val, self.rounding_digit)} Acc: {accuracy * 100}% "
         if batch_idx is not None:
             message = f"EPOCH {epoch} | batch: {batch_idx} " + message
         else:
@@ -198,13 +207,14 @@ class TrainingGenerator:
 
         if self.save_val & (batch_idx is None):
             training_results = self.dict_to_save[SheetNames.TRAINING.value]
-            training_results[TrainingResult.LOSS_TRAIN.value].append((epoch + 1, round(item, self.rounding_digit)))
+            training_results[TrainingResult.LOSS_TRAIN.value].append((epoch + 1, round(loss, self.rounding_digit)))
             training_results[TrainingResult.LOSS_VAL.value].append((epoch + 1, loss_val))
             training_results[TrainingResult.ACCURACY.value].append((epoch + 1, accuracy))
+            training_results[TrainingResult.CONFUSION_MATRIX.value].append((epoch + 1, str(confusion_matrix)))
+
             if self.is_binary_problem:
                 training_results[TrainingResult.PRECISION.value].append((epoch + 1, precision))
                 training_results[TrainingResult.RECALL.value].append((epoch + 1, recall))
-                training_results[TrainingResult.CONFUSION_MATRIX.value].append((epoch + 1, str(confusion_matrix)))
                 training_results[TrainingResult.TP.value].append((epoch + 1, int(confusion_matrix[0][0])))
                 training_results[TrainingResult.FP.value].append((epoch + 1, int(confusion_matrix[0][1])))
                 training_results[TrainingResult.FN.value].append((epoch + 1, int(confusion_matrix[1][0])))

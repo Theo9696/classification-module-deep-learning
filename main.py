@@ -5,8 +5,8 @@ from common.formatter_from_csv import csv_format_into_folder
 
 # If necessary
 FORMAT_FROM_CSV_INTO_FOLDER = False
-DATA_STUDIED = DataLocation.BLOOD
-NUM_CLASSES = get_nb_classes(DATA_STUDIED.value + "/train")
+DATA_STUDIED = DataLocation.PLANT
+NUM_CLASSES = get_nb_classes(DATA_STUDIED.value + "/train") | get_nb_classes(DATA_STUDIED.value)
 
 
 def format_csv():
@@ -16,18 +16,18 @@ def format_csv():
 
 
 def main():
-    model = build_model(ModelEnum.CNN2, nb_classes=NUM_CLASSES, depth_input=3)
+    model = build_model(ModelEnum.CNN4, nb_classes=NUM_CLASSES, depth_input=3)
 
-    data = import_data(batch_size=70, main_folder=DATA_STUDIED, split=SplitOptions.SPLIT_TRAIN, train_size=0.75,
+    data = import_data(batch_size=40, main_folder=DATA_STUDIED, split=SplitOptions.SPLIT_ALL, train_size=0.75,
                        test_size=0.15)
 
     # Saving information for test purposes
     save_value = True
-    sheet_name = "Test Blood CNN 2 - 10 epochs"
+    sheet_name = "Plant CNN4 - 15 epoch"
     source_to_save_data = './resources/data.xlsx'
     rounding_digit = 5
 
-    generator = TrainingGenerator(model=model, data=data, number_epoch=10, print_intermediate_perf=False,
+    generator = TrainingGenerator(model=model, data=data, number_epoch=15, print_intermediate_perf=False,
                                   parameters_data_input=data.parameters_data_input, rounding_digit=rounding_digit,
                                   save_performances=save_value, sheet_name=sheet_name,
                                   location_to_save=source_to_save_data)
