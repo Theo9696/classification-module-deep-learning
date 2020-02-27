@@ -1,7 +1,7 @@
 import time
 
 from learning.trainer import TrainingGenerator
-from common.helper import build_model, import_data, train
+from common.helper import import_data, train
 from config import *
 
 
@@ -9,12 +9,11 @@ def main():
     data = import_data(batch_size=BATCH_SIZE, main_folder=DATA_STUDIED, split=SPLIT, train_size=TRAIN_SIZE,
                        test_size=TEST_SIZE, k_fold=CROSS_VALIDATION, nb_chunk=NB_FOLD)
 
-    for model_type in MODELS:
-        sheet_name = f"{DATA_STUDIED.name} {model_type.name} - {NUM_EPOCHS} epoch"
+    for model in MODELS:
+        sheet_name = f"{DATA_STUDIED.name} {model.name} - {NUM_EPOCHS} epoch"
 
         for k in range(NB_FOLD):
             sheet_name_fold = sheet_name + (f" - fold {k}" if NB_FOLD > 1 else "")
-            model = build_model(model_type, nb_classes=NUM_CLASSES, depth_input=3)
             generator = TrainingGenerator(model=model, data=data.data[k],
                                           number_epoch=NUM_EPOCHS,
                                           print_intermediate_perf=False,

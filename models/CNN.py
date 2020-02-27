@@ -105,7 +105,8 @@ class ModelCNN(Model):
 
 
 class ModelCnn2Layers(ModelCNN):
-    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: bool = False, height_fc: int = 500):
+    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: bool = False, height_fc: int = 500,
+                 batch_norm: bool = False):
         super().__init__(nb_classes, depth_input)
         self.nb_layers = 2
         self.num_conv_1 = 10  # try 32
@@ -117,16 +118,17 @@ class ModelCnn2Layers(ModelCNN):
         self.final_size = 61
         # num_conv_in: int, num_conv_out: int, stride: int, kernel_size: int, pooling: list[int] = None,
         layer_1 = CNNetMaterials(depth_input, self.num_conv_1, self.stride, self.kernel,
-                                 [self.pooling, self.pooling], dropout=dropout)
+                                 [self.pooling, self.pooling], dropout=dropout, batch_norm=batch_norm)
         layer_2 = CNNetMaterials(self.num_conv_1, self.num_conv_2, self.stride, self.kernel,
-                                 [self.pooling, self.pooling], dropout=dropout)
+                                 [self.pooling, self.pooling], dropout=dropout, batch_norm=batch_norm)
         layer_3 = MLPnetMaterials(self.num_conv_2 * self.final_size * self.final_size, self.height_fc)
         layer_4 = MLPnetMaterials(self.height_fc, self.nb_classes_out, is_last_layer=True)
         self.model = CNN([layer_1, layer_2], [layer_3, layer_4], self.nb_classes_out, self.final_size)
 
 
 class ModelCnn3Layers(ModelCNN):
-    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: bool = False, height_fc: int = 500):
+    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: bool = False, height_fc: int = 500,
+                 batch_norm: bool = False):
         super().__init__(nb_classes, depth_input)
         self.nb_layers = 3
         num_conv_1 = 10
@@ -141,11 +143,11 @@ class ModelCnn3Layers(ModelCNN):
 
         # num_conv_in: int, num_conv_out: int, stride: int, kernel_size: int, pooling: list[int] = None,
         layer_1 = CNNetMaterials(self.depth_input, num_conv_1, self.stride, self.kernel[0],
-                                 [self.pooling, self.pooling], dropout=dropout)
+                                 [self.pooling, self.pooling], dropout=dropout, batch_norm=batch_norm)
         layer_2 = CNNetMaterials(num_conv_1, num_conv_2, self.stride, self.kernel[1], [self.pooling, self.pooling],
-                                 dropout=dropout)
+                                 dropout=dropout, batch_norm=batch_norm)
         layer_3 = CNNetMaterials(num_conv_2, num_conv_3, self.stride, self.kernel[2], [self.pooling, self.pooling],
-                                 dropout=dropout)
+                                 dropout=dropout, batch_norm=batch_norm)
         layer_4 = MLPnetMaterials(num_conv_3 * final_size * final_size, self.height_fc)
         layer_5 = MLPnetMaterials(self.height_fc, self.nb_classes_out, is_last_layer=True)
 
@@ -153,7 +155,8 @@ class ModelCnn3Layers(ModelCNN):
 
 
 class ModelCnn4Layers(ModelCNN):
-    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: bool = False, height_fc: int = 500):
+    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: bool = False, height_fc: int = 500,
+                 batch_norm: bool = False):
         super().__init__(nb_classes, depth_input)
         self.nb_layers = 4
         num_conv_1 = 10
@@ -171,13 +174,13 @@ class ModelCnn4Layers(ModelCNN):
         # num_conv_in: int, num_conv_out: int, stride: int, kernel_size: int, pooling: list[int] = None,
 
         layer_1 = CNNetMaterials(depth_input, num_conv_1, self.stride, self.kernel[0], [self.pooling, self.pooling],
-                                 dropout=dropout)
+                                 dropout=dropout, batch_norm=batch_norm)
         layer_2 = CNNetMaterials(num_conv_1, num_conv_2, self.stride, self.kernel[1], [self.pooling, self.pooling],
-                                 dropout=dropout)
+                                 dropout=dropout, batch_norm=batch_norm)
         layer_3 = CNNetMaterials(num_conv_2, num_conv_3, self.stride, self.kernel[2], [self.pooling, self.pooling],
-                                 dropout=dropout)
+                                 dropout=dropout, batch_norm=batch_norm)
         layer_4 = CNNetMaterials(num_conv_3, num_conv_4, self.stride, self.kernel[3], [self.pooling, self.pooling],
-                                 dropout=dropout)
+                                 dropout=dropout, batch_norm=batch_norm)
         layer_5 = MLPnetMaterials(num_conv_4 * final_size * final_size, self.height_fc)
         layer_6 = MLPnetMaterials(self.height_fc, nb_classes, is_last_layer=True)
 
@@ -185,7 +188,8 @@ class ModelCnn4Layers(ModelCNN):
 
 
 class ModelCnn5Layers(ModelCNN):
-    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: bool = False, height_fc: int = 500):
+    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: bool = False, height_fc: int = 500,
+                 batch_norm: bool = False):
         super().__init__(nb_classes, depth_input)
         self.nb_layers = 5
         num_conv_1 = 10
@@ -204,15 +208,15 @@ class ModelCnn5Layers(ModelCNN):
         # num_conv_in: int, num_conv_out: int, stride: int, kernel_size: int, pooling: list[int] = None,
 
         layer_1 = CNNetMaterials(depth_input, num_conv_1, self.stride, self.kernel[0], [self.pooling, self.pooling],
-                                 dropout=dropout)
+                                 dropout=dropout, batch_norm=batch_norm)
         layer_2 = CNNetMaterials(num_conv_1, num_conv_2, self.stride, self.kernel[1], [self.pooling, self.pooling],
-                                 dropout=dropout)
+                                 dropout=dropout, batch_norm=batch_norm)
         layer_3 = CNNetMaterials(num_conv_2, num_conv_3, self.stride, self.kernel[2], [self.pooling, self.pooling],
-                                 dropout=dropout)
+                                 dropout=dropout, batch_norm=batch_norm)
         layer_4 = CNNetMaterials(num_conv_3, num_conv_4, self.stride, self.kernel[3], [self.pooling, self.pooling],
-                                 dropout=dropout)
+                                 dropout=dropout, batch_norm=batch_norm)
         layer_5 = CNNetMaterials(num_conv_4, num_conv_5, self.stride, self.kernel[4], [self.pooling, self.pooling],
-                                 dropout=dropout)
+                                 dropout=dropout, batch_norm=batch_norm)
         layer_6 = MLPnetMaterials(num_conv_5 * final_size * final_size, self.height_fc)
         layer_7 = MLPnetMaterials(self.height_fc, nb_classes, is_last_layer=True)
 

@@ -33,14 +33,15 @@ def get_nb_classes(path: str):
     return nb_classes
 
 
-def build_model(model: ModelEnum, nb_classes: int, depth_input: int):
+def build_model(model: ModelEnum, nb_classes: int, depth_input: int, height_fc: int = 500, dropout: bool = False,
+                batch_norm: bool = False):
     logger.info("Creation of the structure of the models ...")
 
     if model is ModelEnum.RESNET:
         return model.value(nb_classes)
 
     else:
-        return model.value(nb_classes, depth_input)
+        return model.value(nb_classes, depth_input, height_fc=height_fc, dropout=dropout, batch_norm=batch_norm)
 
 
 def import_data(batch_size: int, main_folder: DataLocation, split: SplitOptions, train_size: float,

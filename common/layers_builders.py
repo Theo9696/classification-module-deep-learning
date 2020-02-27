@@ -24,14 +24,16 @@ class CNNetMaterials(LayersMaterials):
     """
 
     def __init__(self, num_conv_in: int, num_conv_out: int, stride: int, kernel_size: int, pooling: list,
-                 dropout: float = -1.0):
+                 dropout: float = -1.0, batch_norm: bool = False):
         super().__init__(num_conv_in, num_conv_out)
         self._stride = stride
         self._kernel_size = kernel_size
         self._pooling = pooling
         self._dropout = dropout
+        self._batch_norm = batch_norm
         self.layer = nn.Conv2d(num_conv_in, num_conv_out, kernel_size, stride)
         self.drop = nn.Dropout2d(p=dropout) if (dropout is not None) & ((dropout > 0) & (dropout <= 1.0)) else None
+        self.batch_norm = nn.BatchNorm2d(num_features=num_conv_out) if batch_norm else None
 
     def get_stride(self):
         return self._stride
@@ -59,6 +61,10 @@ class CNNetMaterials(LayersMaterials):
         # Dropout
         if self.has_dropout() & (self.drop is not None):
             x = self.drop(x)
+
+        # Batch norm
+        if self._batch_norm:
+            x = self.batch_norm(x)
 
         # Non linearity
         x = F.relu(x)
