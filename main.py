@@ -14,7 +14,7 @@ def main():
 
         for k in range(NB_FOLD):
             sheet_name_fold = sheet_name + (f" - fold {k}" if NB_FOLD > 1 else "")
-            generator = TrainingGenerator(model=model, data=data.data[k],
+            generator = TrainingGenerator(model=model.model, data=data.data[k],
                                           number_epoch=NUM_EPOCHS,
                                           print_intermediate_perf=False,
                                           parameters_data_input=data.parameters_data_input,

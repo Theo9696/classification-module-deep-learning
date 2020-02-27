@@ -7,7 +7,7 @@ class ModelCreator:
                  dropout: bool = False, height_fc: int = None):
         self.model = build_model(model_type, nb_classes=nb_classes, depth_input=depth_input, batch_norm=batch_norm,
                                  dropout=dropout, height_fc=height_fc)
-        self.name = model_type.value
+        self.name = model_type.name
 
 
 # CONFIGURATION
@@ -15,14 +15,14 @@ SPLIT = SplitOptions.SPLIT_ALL
 
 DATA_STUDIED = DataLocation.PLANT
 NUM_CLASSES = get_nb_classes(DATA_STUDIED.value + "/train") or get_nb_classes(DATA_STUDIED.value)
-NUM_EPOCHS = 65
+NUM_EPOCHS = 100
 BATCH_SIZE = 80
 TRAIN_SIZE = 0.75
 TEST_SIZE = 0.80
 CROSS_VALIDATION = False
 NB_FOLD = 4 if CROSS_VALIDATION else 1
 
-MODELS_TYPE = [ModelEnum.CNN2, ModelEnum.CNN3, ModelEnum.CNN4, ModelEnum.CNN5]
+MODELS_TYPE = [ModelEnum.CNN4, ModelEnum.CNN5]
 
 MODELS = []
 

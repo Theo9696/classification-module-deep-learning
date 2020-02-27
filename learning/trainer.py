@@ -11,7 +11,7 @@ import numpy as np
 
 
 class TrainingGenerator:
-    def __init__(self, model: Model, data: DataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = -1,
+    def __init__(self, model: Model, data: DataImporter, number_epoch: int = 10, lr: float = 0.001, momentum: float = -1,
                  print_intermediate_perf=True, save_performances=True, sheet_name: str = "", location_to_save: str = "",
                  parameters_data_input: dict = None, rounding_digit: int = 5, adam: bool = True):
         self._model = model.model
