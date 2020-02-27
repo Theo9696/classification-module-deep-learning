@@ -7,3 +7,5 @@ data/**
 resources/**
 *.log
 *cpython-37.pyc
+
+config.py
