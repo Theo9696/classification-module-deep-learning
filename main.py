@@ -12,7 +12,6 @@ SPLIT = SplitOptions.SPLIT_ALL
 
 DATA_STUDIED = DataLocation.PLANT
 NUM_CLASSES = get_nb_classes(DATA_STUDIED.value + "/train") or get_nb_classes(DATA_STUDIED.value)
-MODEL_TYPE = ModelEnum.RESNET
 NUM_EPOCHS = 10
 BATCH_SIZE = 40
 TRAIN_SIZE = 0.75
@@ -37,10 +36,9 @@ def main():
     data = import_data(batch_size=BATCH_SIZE, main_folder=DATA_STUDIED, split=SPLIT, train_size=TRAIN_SIZE,
                        test_size=TEST_SIZE, k_fold=CROSS_VALIDATION, nb_chunk=NB_FOLD)
 
-    # Saving information for test purposes
-    sheet_name = f"{DATA_STUDIED.name} {MODEL_TYPE.name} - {NUM_EPOCHS} epoch"
-
     for model_type in MODELS:
+        sheet_name = f"{DATA_STUDIED.name} {model_type.name} - {NUM_EPOCHS} epoch"
+
         for k in range(NB_FOLD):
             sheet_name_fold = sheet_name + f" - fold {k}"
             model = build_model(model_type, nb_classes=NUM_CLASSES, depth_input=3)
