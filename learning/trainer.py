@@ -13,7 +13,7 @@ import numpy as np
 class TrainingGenerator:
     def __init__(self, model: Model, data: DataImporter, number_epoch: int = 10, lr: float = 0.05, momentum: float = -1,
                  print_intermediate_perf=True, save_performances=True, sheet_name: str = "", location_to_save: str = "",
-                 parameters_data_input: dict = None, rounding_digit: int = 5):
+                 parameters_data_input: dict = None, rounding_digit: int = 5, adam: bool = True):
         self._model = model.model
         self._model_info = model
         self._data = data
@@ -46,6 +46,7 @@ class TrainingGenerator:
                              },
                              SheetNames.RESULT.value: {}}
         self.sheet_name = sheet_name
+        self.adam = adam
         self.rounding_digit = rounding_digit
         for element in parameters_data_input:
             self.dict_to_save[SheetNames.PARAMETERS_MODELS.value][element] = parameters_data_input[element]
@@ -112,10 +113,13 @@ class TrainingGenerator:
         self._model.to(self.device)
 
         # optimization hyperparameters
-        if self._momentum:
-            optimizer = torch.optim.SGD(self._model.parameters(), lr=self._lr, momentum=self._momentum)
+        if self.adam:
+            optimizer = torch.optim.Adam(self._model.parameters(), lr=self._lr)
         else:
-            optimizer = torch.optim.SGD(self._model.parameters(), lr=self._lr)
+            if self._momentum:
+                optimizer = torch.optim.SGD(self._model.parameters(), lr=self._lr, momentum=self._momentum)
+            else:
+                optimizer = torch.optim.SGD(self._model.parameters(), lr=self._lr)
         loss_fn = nn.CrossEntropyLoss()
 
         # main loop (train+test)

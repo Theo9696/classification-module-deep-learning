@@ -13,7 +13,7 @@ def main():
         sheet_name = f"{DATA_STUDIED.name} {model_type.name} - {NUM_EPOCHS} epoch"
 
         for k in range(NB_FOLD):
-            sheet_name_fold = sheet_name + f" - fold {k}"
+            sheet_name_fold = sheet_name + (f" - fold {k}" if NB_FOLD > 1 else "")
             model = build_model(model_type, nb_classes=NUM_CLASSES, depth_input=3)
             generator = TrainingGenerator(model=model, data=data.data[k],
                                           number_epoch=NUM_EPOCHS,
@@ -22,7 +22,8 @@ def main():
                                           rounding_digit=ROUNDING_DIGIT,
                                           save_performances=SAVE_VALUE,
                                           sheet_name=sheet_name_fold,
-                                          location_to_save=OUTPUT_FILE)
+                                          location_to_save=OUTPUT_FILE,
+                                          adam=True)
 
             train(generator, k_fold=CROSS_VALIDATION, fold=k)
 
