@@ -1,5 +1,5 @@
 from enum import Enum
-from models.CNN import ModelCnn2Layers, ModelCnn3Layers, ModelCnn4Layers
+from models.CNN import ModelCnn2Layers, ModelCnn3Layers, ModelCnn4Layers, ModelCnn5Layers
 from models.Resnet import Resnet
 from common.data_imports import DataImporter, SplitOptions
 from common.logger import logger
@@ -22,6 +22,7 @@ class ModelEnum(Enum):
     CNN2 = ModelCnn2Layers
     CNN3 = ModelCnn3Layers
     CNN4 = ModelCnn4Layers
+    CNN5 = ModelCnn5Layers
     RESNET = Resnet
 
 

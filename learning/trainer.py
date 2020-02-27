@@ -29,7 +29,8 @@ class TrainingGenerator:
         self.dict_to_save = {SheetNames.PARAMETERS.value: {ParametersNames.MODEL.value: type(self._model).__name__,
                                                            ParametersNames.NB_EPOCH.value: self._number_epoch,
                                                            ParametersNames.LEARNING_RATE.value: self._lr,
-                                                           ParametersNames.MOMENTUM.value: self._momentum},
+                                                           ParametersNames.MOMENTUM.value: self._momentum
+                                                           },
                              SheetNames.PARAMETERS_MODELS.value: model.get_parameters(),
                              SheetNames.TRAINING.value: {
                                  TrainingResult.ACCURACY.value: [],
