@@ -2,14 +2,7 @@ import time
 
 from learning.trainer import TrainingGenerator
 from common.helper import build_model, import_data, train
-from common.formatter_from_csv import csv_format_into_folder
 from config import *
-
-
-def format_csv():
-    csv_format_into_folder(location_csv=DataLocation.WHALES.value + "/train.csv",
-                           location_folder=DataLocation.WHALES.value + "/train/",
-                           location_img=DataLocation.WHALES.value + "/train/train")
 
 
 def main():
@@ -35,8 +28,6 @@ def main():
 
 
 if __name__ == "__main__":
-    # if FORMAT_FROM_CSV_INTO_FOLDER:
-    #     format_csv()
     # print(NUM_CLASSES)
     t0 = time.time()
     main()
