@@ -1,11 +1,13 @@
 from enum import Enum
 from models.CNN import ModelCnn2Layers, ModelCnn3Layers, ModelCnn4Layers, ModelCnn5Layers
-from models.Resnet import Resnet
+from models.Resnet import Resnet, ResnetEndTuned, ResNet34, ResnetLayers3And4Tuned
 from common.data_imports import DataImporter, SplitOptions
 from common.logger import logger
 from learning.trainer import TrainingGenerator
 from data_saver.excel_actions import SheetSaver
 import os
+
+from models.image_classifiers import InceptionV3
 
 DATA_FOLDER = "data/"
 
@@ -24,6 +26,10 @@ class ModelEnum(Enum):
     CNN4 = ModelCnn4Layers
     CNN5 = ModelCnn5Layers
     RESNET = Resnet
+    RESNET4TUN = ResnetEndTuned
+    RESNET34TUN = ResnetLayers3And4Tuned
+    RESNET34 = ResNet34
+    INCEPTION3 = InceptionV3
 
 
 def get_nb_classes(path: str):
@@ -37,7 +43,8 @@ def build_model(model: ModelEnum, nb_classes: int, depth_input: int, height_fc: 
                 batch_norm: bool = False):
     logger.info("Creation of the structure of the models ...")
 
-    if model is ModelEnum.RESNET:
+    if model in (ModelEnum.RESNET, ModelEnum.RESNET34, ModelEnum.RESNET34TUN,
+                 ModelEnum.RESNET4TUN, ModelEnum.INCEPTION3):
         return model.value(nb_classes)
 
     else:
