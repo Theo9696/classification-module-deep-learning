@@ -11,7 +11,8 @@ import numpy as np
 
 
 class TrainingGenerator:
-    def __init__(self, model: Model, data: DataImporter, number_epoch: int = 10, lr: float = 0.001, momentum: float = -1,
+    def __init__(self, model: Model, data: DataImporter, number_epoch: int = 10, lr: float = 0.001,
+                 momentum: float = -1,
                  print_intermediate_perf=True, save_performances=True, sheet_name: str = "", location_to_save: str = "",
                  parameters_data_input: dict = None, rounding_digit: int = 5, adam: bool = True):
         self._model = model.model
@@ -155,9 +156,9 @@ class TrainingGenerator:
         self._model.train(True)
 
     def test(self):
+        self._model.train(False)
         results, temporary_confusion = self.evaluate(self._model, self._data.dataset_test, self.device)
         self.print_results(is_test=True, results=results, confusion=temporary_confusion)
-        self._model.train(False)
 
     def print_results(self, results: dict, confusion, is_test: bool = False, is_val: bool = False,
                       batch_idx: int = None,

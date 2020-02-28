@@ -14,6 +14,8 @@ class CNNParameters(Enum):
     STRIDE = "stride"
     KERNEL = "kernel size"
     HEIGHT_FC_CNN = "height MLP layer for CNN"
+    DROPOUT = "dropout"
+    BATCH_NORM = "batch norm"
 
 
 class CNN(nn.Module):
@@ -85,7 +87,7 @@ class CNN(nn.Module):
 
 
 class ModelCNN(Model):
-    def __init__(self, nb_classes: int, depth_input: int = 1):
+    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: float = None, batch_norm: bool = False):
         super().__init__(nb_classes_out=nb_classes)
         self.nb_layers = 0
         self.pooling = 0
@@ -93,6 +95,8 @@ class ModelCNN(Model):
         self.kernel = 0
         self.depth_input = depth_input
         self.height_fc = 0
+        self.dropout = dropout
+        self.batch_norm = batch_norm
 
     def get_parameters(self):
         return {
@@ -100,14 +104,16 @@ class ModelCNN(Model):
             CNNParameters.POOLING.value: self.pooling,
             CNNParameters.STRIDE.value: self.stride,
             CNNParameters.KERNEL.value: self.kernel if type(self.kernel) is int else str(self.kernel),
-            CNNParameters.HEIGHT_FC_CNN.value: self.height_fc
+            CNNParameters.HEIGHT_FC_CNN.value: self.height_fc,
+            CNNParameters.DROPOUT.value: str(self.dropout) if self.dropout else None,
+            CNNParameters.BATCH_NORM.value: str(self.batch_norm)
         }
 
 
 class ModelCnn2Layers(ModelCNN):
-    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: bool = False, height_fc: int = 500,
+    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: float = None, height_fc: int = 500,
                  batch_norm: bool = False):
-        super().__init__(nb_classes, depth_input)
+        super().__init__(nb_classes, depth_input, dropout, batch_norm)
         self.nb_layers = 2
         self.num_conv_1 = 10  # try 32
         self.num_conv_2 = 20  # try 64
@@ -127,9 +133,9 @@ class ModelCnn2Layers(ModelCNN):
 
 
 class ModelCnn3Layers(ModelCNN):
-    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: bool = False, height_fc: int = 500,
+    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: float = None, height_fc: int = 500,
                  batch_norm: bool = False):
-        super().__init__(nb_classes, depth_input)
+        super().__init__(nb_classes, depth_input, dropout, batch_norm)
         self.nb_layers = 3
         num_conv_1 = 10
         num_conv_2 = 20
@@ -155,9 +161,9 @@ class ModelCnn3Layers(ModelCNN):
 
 
 class ModelCnn4Layers(ModelCNN):
-    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: bool = False, height_fc: int = 500,
+    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: float = None, height_fc: int = 500,
                  batch_norm: bool = False):
-        super().__init__(nb_classes, depth_input)
+        super().__init__(nb_classes, depth_input, dropout, batch_norm)
         self.nb_layers = 4
         num_conv_1 = 10
         num_conv_2 = 20
@@ -188,9 +194,9 @@ class ModelCnn4Layers(ModelCNN):
 
 
 class ModelCnn5Layers(ModelCNN):
-    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: bool = False, height_fc: int = 500,
+    def __init__(self, nb_classes: int, depth_input: int = 1, dropout: float = None, height_fc: int = 500,
                  batch_norm: bool = False):
-        super().__init__(nb_classes, depth_input)
+        super().__init__(nb_classes, depth_input, dropout, batch_norm)
         self.nb_layers = 5
         num_conv_1 = 10
         num_conv_2 = 20

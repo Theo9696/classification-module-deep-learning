@@ -5,12 +5,17 @@ from common.helper import import_data, train
 from config import *
 
 
-def main():
-    data = import_data(batch_size=BATCH_SIZE, main_folder=DATA_STUDIED, split=SPLIT, train_size=TRAIN_SIZE,
+def get_data():
+    return import_data(batch_size=BATCH_SIZE, main_folder=DATA_STUDIED, split=SPLIT, train_size=TRAIN_SIZE,
                        test_size=TEST_SIZE, k_fold=CROSS_VALIDATION, nb_chunk=NB_FOLD)
 
+
+def main():
+    data = get_data()
+    k = 1
     for model in MODELS:
-        sheet_name = f"{DATA_STUDIED.name} {model.name} - {NUM_EPOCHS} epoch"
+        sheet_name = f"{DATA_STUDIED.name} {model.name} - {NUM_EPOCHS} epoch " + str(k)
+        k += 1
 
         for k in range(NB_FOLD):
             sheet_name_fold = sheet_name + (f" - fold {k}" if NB_FOLD > 1 else "")
@@ -22,7 +27,8 @@ def main():
                                           save_performances=SAVE_VALUE,
                                           sheet_name=sheet_name_fold,
                                           location_to_save=OUTPUT_FILE,
-                                          adam=True)
+                                          adam=True,
+                                          lr=LEARNING_RATE)
 
             train(generator, k_fold=CROSS_VALIDATION, fold=k)
 

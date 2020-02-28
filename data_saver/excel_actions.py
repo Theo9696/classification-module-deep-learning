@@ -33,6 +33,7 @@ class Result(Enum):
     PRECISION = "Precision Test"
     RECALL = "Recall Test"
     CONFUSION_MATRIX = "Confusion matrix Test"
+    PRETTY_CONFUSION = "pretty confusion matrix"
 
 
 class TrainingResult(Enum):

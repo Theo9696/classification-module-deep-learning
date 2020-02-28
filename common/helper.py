@@ -39,7 +39,7 @@ def get_nb_classes(path: str):
     return nb_classes
 
 
-def build_model(model: ModelEnum, nb_classes: int, depth_input: int, height_fc: int = 500, dropout: bool = False,
+def build_model(model: ModelEnum, nb_classes: int, depth_input: int, height_fc: int = 500, dropout: float = None,
                 batch_norm: bool = False):
     logger.info("Creation of the structure of the models ...")
 
