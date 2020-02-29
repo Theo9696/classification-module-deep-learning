@@ -105,7 +105,7 @@ class TrainingGenerator:
 
         return results, temporary_confusion
 
-    def train(self):
+    def train_model(self):
         ts = time.time()
         assert (self._data is not None) & (self._data.is_data_ready_for_learning()), \
             logger.error("Corrupted learning datas")
@@ -126,7 +126,7 @@ class TrainingGenerator:
         # main loop (train+test)
         for epoch in range(self._number_epoch):
             # training
-            self._model.train(True)  # mode "train" agit sur "dropout" ou "batchnorm"
+            self._model.train(mode=True)  # mode "train" agit sur "dropout" ou "batchnorm"
             avg_loss_train = 0
             for batch_idx, (x, target) in enumerate(self._data.train_loader):
                 optimizer.zero_grad()
@@ -149,14 +149,14 @@ class TrainingGenerator:
         logger.info(f"Training completed in {time_to_fit} s")
 
     def show_score(self, epoch: int, loss, avg_loss, device, batch_idx: int = None, is_val: bool = False):
-        self._model.train(False)
+        self._model.train(mode=False)
         results, temporary_confusion = self.evaluate(self._model, self._data.dataset_val, device)
         self.print_results(is_val=is_val, results=results, batch_idx=batch_idx, loss=loss, epoch=epoch,
                            confusion=temporary_confusion, avg_loss=avg_loss)
-        self._model.train(True)
+        self._model.train(mode=True)
 
     def test(self):
-        self._model.train(False)
+        self._model.train(mode=False)
         results, temporary_confusion = self.evaluate(self._model, self._data.dataset_test, self.device)
         self.print_results(is_test=True, results=results, confusion=temporary_confusion)
 

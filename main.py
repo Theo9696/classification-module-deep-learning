@@ -12,10 +12,10 @@ def get_data():
 
 def main():
     data = get_data()
-    k = 1
+    a = 1
     for model in MODELS:
-        sheet_name = f"{DATA_STUDIED.name} {model.name} - {NUM_EPOCHS} epoch " + str(k)
-        k += 1
+        sheet_name = f"{DATA_STUDIED.name} {model.name} - {NUM_EPOCHS} epoch " + str(a)
+        a += 1
 
         for k in range(NB_FOLD):
             sheet_name_fold = sheet_name + (f" - fold {k}" if NB_FOLD > 1 else "")

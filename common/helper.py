@@ -1,5 +1,5 @@
 from enum import Enum
-from models.CNN import ModelCnn2Layers, ModelCnn3Layers, ModelCnn4Layers, ModelCnn5Layers
+from models.CNN import ModelCnn2Layers, ModelCnn3Layers, ModelCnn4Layers, ModelCnn5Layers, ModelCnn5LayersSmallKernel
 from models.Resnet import Resnet, ResnetEndTuned, ResNet34, ResnetLayers3And4Tuned
 from common.data_imports import DataImporter, SplitOptions
 from common.logger import logger
@@ -25,6 +25,7 @@ class ModelEnum(Enum):
     CNN3 = ModelCnn3Layers
     CNN4 = ModelCnn4Layers
     CNN5 = ModelCnn5Layers
+    CNN5_Small = ModelCnn5LayersSmallKernel
     RESNET = Resnet
     RESNET4TUN = ResnetEndTuned
     RESNET34TUN = ResnetLayers3And4Tuned
@@ -39,8 +40,9 @@ def get_nb_classes(path: str):
     return nb_classes
 
 
-def build_model(model: ModelEnum, nb_classes: int, depth_input: int, height_fc: int = 500, dropout: float = None,
-                batch_norm: bool = False):
+def build_model(model: ModelEnum, nb_classes: int, depth_input: int, height_fc: int = 500, dropout_conv: float = None,
+                dropout_fc: float = None, batch_norm: bool = False):
+
     logger.info("Creation of the structure of the models ...")
 
     if model in (ModelEnum.RESNET, ModelEnum.RESNET34, ModelEnum.RESNET34TUN,
@@ -48,7 +50,8 @@ def build_model(model: ModelEnum, nb_classes: int, depth_input: int, height_fc: 
         return model.value(nb_classes)
 
     else:
-        return model.value(nb_classes, depth_input, height_fc=height_fc, dropout=dropout, batch_norm=batch_norm)
+        return model.value(nb_classes, depth_input, height_fc=height_fc, dropout_conv=dropout_conv,
+                           dropout_fc=dropout_fc, batch_norm=batch_norm)
 
 
 def import_data(batch_size: int, main_folder: DataLocation, split: SplitOptions, train_size: float,
@@ -67,8 +70,8 @@ def train(gen: TrainingGenerator, k_fold: bool = False, fold: int = 1):
     if gen.save_val:
         # Test if the sheet name is free
         if SheetSaver(gen.sheet_saver.location).test_name_sheet(gen.sheet_name):
-            gen.train()
+            gen.train_model()
             gen.test()
     else:
-        gen.train()
+        gen.train_model()
         gen.test()
